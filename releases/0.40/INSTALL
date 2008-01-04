@@ -1,0 +1,32 @@
+Installation instructions
+-------------------------
+
+== Requirements ==
+If you find that this script works with any older versions of these 
+applications, please drop me a note at and@vmn.dk.
+
+Tested with Perl version 5.8.8
+
+fortune (for !fortune functionality)
+
+= Perl modules =
+File::Copy
+Getopt::Long
+POE v.0.9500
+POE::Component::IRC v.5.16
+Term::ReadKey v.2.30
+HTML::Entities v.1.35
+DBI v.1.52 and up
+DBD::SQLite v.1.12
+LWP::UserAgent v.5.805
+
+== Installation ==
+1) tar zxvf anna-$VERSION.tar.gz
+2) cd anna-$VERSION/
+1) sudo make install
+2) refresh your path (or just run /usr/local/bin/anna)
+3) type "anna"
+4) ???
+5) PROFIT!!!
+
+See HELP or anna --help for more info on how to run Anna^

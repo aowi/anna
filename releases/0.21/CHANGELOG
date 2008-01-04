@@ -1,0 +1,55 @@
+Anna^ IRC Bot CHANGELOG
+
+0.01: Sun Jul 23 22:14:49 CEST 2006
+	- Initial version by arkanoid
+
+0.10 Tue Aug  8 22:05:13 CEST 2006
+	- Bot works now, and actually does stuff - Woo!
+	- Most of the IRC protocol and CTCP implemented
+	- Most settings can be tweaked from command-line
+	- SQLite integrated
+	- Several replies to various phrases added
+	- Some functions added:
+		- Haiku - print random haikus to a channel or in privmsg
+		- Addhaiku - add a haiku to the database
+		- Lart - print random insult against a luser
+		- Addlart - add insult to the database
+		- Seen - query for information about users and when they last 
+		  were active
+		- Up - print uptime of the bot
+		- Order - order some beer from the bar... or what about some 
+		  ice-cold pepsi? 
+
+0.20 Sat Sep  2 21:43:07 CEST 2006
+	- Lastseen now handles quits, parts and joins correctly
+	- Auto-op'ing of users. Currently maintained in the file. DB interface
+	  is planned.
+	- Kicks are now shown correctly
+	- New functions:
+		- Question - Anna^ now responds to any message to her that ends
+		  with a ?. She also answers !question <question>
+		- Roulette - Or rather... russian roulette. Lose, and you'll 
+		  get kicked (provided Anna^has the rights).
+		  Type '!roulette' and get shot. Type '!reload' if you're a 
+		  weenie.
+		- Bash - type !bash #<number> or !bash random and Anna^ returns
+		  the corresponding quote (or a random one) from the bash quote
+		  database (http://bash.org).
+		- Quote - Save quotes and displays random quotes on !quote 
+		- Karma - That's right, show the world who/what you like (and 
+		  dislike) through this brand new and unoriginal karma system 
+		  (work--, anyone?)
+		- Fortunes - yep, that's right. If the fortune app is installed
+		  and in your path, your can use !fortune
+		- Google - search google. Anna^ returns the first result found.
+	- New requirements:
+		- LWP::UserAgent module is now required as well. It is used for 
+		  bash and google functions and will be used for other website-
+		  interaction later.
+	- Several minor cleanups
+	- Fixed !order-bug. !order <item> for <nick> now works correctly
+	- Running Anna^ with --help or -h on the command-line now prints usage
+	  information
+
+0.21 Wed Sep  6 19:29:16 CEST 2006
+	- Bugfix - parsing of command-line now works properly!

@@ -1,0 +1,28 @@
+Installation instructions
+-------------------------
+
+== Requirements ==
+If you find that this script works with any older versions of these 
+applications, please drop me a note at and@vmn.dk.
+
+*nix system (although you shouldn't have many troubles getting this to run 
+under ActiveState)
+
+Perl version 5.8.8 or later
+
+Fortune (for !fortune functionality)
+
+= Perl modules =
+Net::IRC v.0.75
+DBI v.1.52
+DBD::SQLite v.1.12
+LWP::UserAgent v.5.805
+
+== Installation ==
+1) su -c "make install"
+2) refresh your path (or just run /usr/local/bin/anna)
+3) type "anna"
+4) ???
+5) PROFIT!!!
+
+See HELP or anna.pl --help for more info on how to run Anna^

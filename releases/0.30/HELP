@@ -1,0 +1,70 @@
+Feature-list
+------------
+Commands are with either !<cmd> or <nick>: <cmd>
+
+!google [<int>] <query> - search google. <int> may be used to specify number of 
+			  results to return
+!fortune - print fortune (from fortune -s). You can send arguments to fortune:
+	   -a (use all fortune packages), -e (treat all packages as if they were 
+	   equal in size) and -o (print offensive fortune). You can also specify
+	   a package to pick the fortune from.
+!karma <word> - display karma for <word>.
+<word>++/-- - increase or decrease karma for <word>.
+!quote - print random quote from database.
+!addquote <quote> - add <quote> to database. Use \n for newlines.
+!bash (<number>|random) - print quote number <number> or a random one from 
+			  bash.org.
+!roulette - shoot yourself.
+!reload - reload roulette.
+!rot13 <string> - translate <string> with rot13.
+!question <question>? - Get a profound answer from the bot. Anna^ responds to
+			anything that ends with "?".
+!addanswer <answer> - add one of the aforementioned answers to Anna^'s database
+!up(time) - print uptime of the bot.
+!lart <word> - make Anna^ insult <word>.
+!addlart <lart> - add insult to the database. The insult must include "##",
+		  which will be replaced with the word to insult.
+!haiku - print random haiku.
+!addhaiku <line1> ## <line2> ## <line3> - add haiku to the database.
+!dice <num1>d<num2> - roll <num1> dice with <num2> sides.
+!order <item> [for <nick>] - make Anna^ serve <item> [to <nick>].
+!seen <nick> - make Anna^ print information for when she last saw <nick>.
+!search <table> <str> - search <table> for content containing <str>. Possible
+			values for <table> is 'quotes', 'notes' and 'all'.
+!meh - print ~meh.
+!addorder - Add an order to the database. Syntax is !addorder <key> = <order>, 
+	    where <order> must contain the string "##" (which is substituted
+	    for the user's nick).
+!rstats - Print statistical information about roulette games.
+<botnick>: poke - poke the bot.
+
+Usage
+-----
+Anna^ IRC Bot version 0.21-svn
+Usage: perl anna.pl [OPTION]...
+
+Mandatory arguments to long options are mandatory for short options too.
+  -a, --name <name>		set the realname of the bot. This is not the
+  				nickname!
+  -c, --channel <channel>	set the channel to join.
+  -s, --server <server>		set the server to connect to.
+  -n, --nick <nick>		set the nickname of the bot. Default is Anna^
+  -u, --username <user>		set the username of the bot.
+  -p, --port <port>		set the port to connect to. Default is 6667
+  -P, --nspasswd <passwd>	authorize with nickserv using <passwd> upon
+  				successful connection.
+
+      --no-color		don't use colours in terminal.
+  -D, --dbfile <file>		specify the SQLite3 database-file.
+      --silent			suppress all output (except critical messages)
+  -v, --verbose			print verbose information.
+  -V, --version			print version information and exit.
+  -h, --help			show this message.
+
+Note: 	specifying your nickserv password on the command-line is unsafe. You 
+	should set it in the file instead.
+
+All options listed here can be set within the file as well.
+Anna^ IRC Bot is a small and versatile IRC-bot with various functionality.
+
+Please report bugs to and@vmn.dk

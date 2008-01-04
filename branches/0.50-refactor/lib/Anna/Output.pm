@@ -1,0 +1,44 @@
+package Anna::Output;
+use strict;
+use warnings;
+
+our @EXPORT = qw(irclog);
+use Exporter;
+our @ISA = qw(Exporter);
+
+use Anna::Utils;
+
+## irclog
+# Manages logging. Takes two params, the level of what is being logged and the
+# actual message to log. Two level are possible, #channel and 'status'.
+# #channel is for everything said in channel and status is for everything
+# printed in the status window.
+sub irclog {
+	return;
+	croak("irclog requires three parameters") unless (@_ == 3);
+	my ($target, $msg, $conf) = @_;
+	
+	if (!(-e $ENV{'HOME'}."/.anna/logs")) {
+		mkdir $ENV{'HOME'}."/.anna/logs" or die("Can't create directory: $!");
+	}
+	
+	# Use lowercase
+	$target = lc($target);
+	
+	if ($target eq 'status') {
+		open(LOG, ">> $ENV{'HOME'}/.anna/logs/anna.log") or die("Can't open logfile: $!");
+		printf LOG "%s %s\n", print_time(), $msg;
+		close(LOG);
+	} else {
+		my $network = $conf->get('server');
+		$network =~ s/.*\.(.*)\..*/$1/;
+		if (!(-e $ENV{'HOME'}."/.anna/logs/".$network)) {
+			mkdir $ENV{'HOME'}."/.anna/logs/".$network or die("Can't create directory: $!");
+		}
+		open(LOG, ">> $ENV{'HOME'}/.anna/logs/$network/$target.log") or die("Can't open logfile: $!");
+		printf LOG "%s %s\n", print_time(), $msg;
+		close(LOG);
+	}
+}
+
+1;

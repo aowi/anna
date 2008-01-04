@@ -1,0 +1,121 @@
+lib/
+ Anna.pm
+  command_bind
+  cmd_exists_in_db
+ Anna/
+  CTCP.pm
+   on_ctcp_ping
+   on_ctcpreply_ping
+   on_ctcp_version
+   on_ctcpreply_version
+   on_ctcp_time
+   on_ctcp_finger
+  Log.pm
+   new
+   write
+  Config.pm
+   new
+   empty_db
+   exists
+   key_exists_in_db
+   update_db
+   parse_configfile
+   get
+   set
+   toggle
+   delete
+  Debug.pm
+   _default
+  Utils.pm
+   version
+   usage
+   error
+   warning
+   colour
+   trim
+   rtrim
+   ltrim
+   calc_diff
+   print_time
+  Output.pm
+   irclog
+  Connection.pm
+   do_autoping
+   do_reconnect
+   do_connect
+  Module.pm
+   empty_db
+   execute
+   load
+   unload
+  DB.pm
+   new
+   sync
+   DESTROY
+modules/
+ Anna
+  Bot
+   auto/
+   core/
+    Lastseen.pl
+    Note.pl
+    Search.pl
+    Privs.pl
+    Uptime.pl
+   Karma.pl
+   Answer.pl
+   Roulette.pl
+   Dice.pl
+   Order.pl
+   Haiku.pl
+   Crypt.pl
+   Quote.pl
+   Googlesearch.pl
+   Bash.pl
+   Lart.pl
+   Fortune.pl
+
+KILLWORDS:
+$dbh
+$server
+$trigger
+$silent
+$verbose
+$heap->{$host}
+$irc
+
+Config
+======
+Internally, Anna^ uses a sqlite-table with configuration. Each change are 
+written to the database and, on demand, to the config-file. Each request for a
+config-object, returns whatever is in the table at the moment.
+
+Authentication
+==============
+Anna^ keeps track of authentications with a sqlite table. Authentications can 
+be hooked to nickserv-registration (so registered users automagically are 
+authenticated). Anna^ will clear the authentication table upon initial startup, 
+unless explicitly told not to (if you wish to keep peoples auths during an 
+upgrade or the like. There _shouldn't_ be a problem with this, since auth's 
+will be cross-referenced with user hostmasks/cloaks.
+
+
+Heap-object:
+
+$heap
+	irc	=> irc-object
+	auth	=>
+		<host> =>
+			user	=> <username>
+			nick 	=> <irc_nick>
+	modules	=>
+		<module_name>	=>
+			[local module-heap]
+	
+Modules
+=======
+Each module reside in a separate namespace under Anna::Module (e.g. Anna::Module::haiku).
+On load, the module is eval'd in that particular namespace. Here, it can hook up to various commands via
+the Anna::command_bind function, match regexps via Anna::regexp_bind and more. When an appropriate command
+is found, Anna^ will call the Anna::Module::module_name::sub that's associated with the specific command
+On unload, the namespace Anna::Module::module_name is destroyed (is this possible?)

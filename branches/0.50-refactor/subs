@@ -1,0 +1,123 @@
+Binary file ./.anna.pl.swp matches
+./modules/core/haiku.pl:sub addhaiku {
+./modules/core/haiku.pl:sub haiku {
+./test.pl:sub foo {
+./lib/Anna/CTCP.pm:sub on_ctcp_ping {
+./lib/Anna/CTCP.pm:sub on_ctcpreply_ping {
+./lib/Anna/CTCP.pm:sub on_ctcp_version {
+./lib/Anna/CTCP.pm:sub on_ctcpreply_version {
+./lib/Anna/CTCP.pm:sub on_ctcp_time {
+./lib/Anna/CTCP.pm:sub on_ctcp_finger {
+./lib/Anna/Log.pm:sub new {
+./lib/Anna/Log.pm:sub write {
+./lib/Anna/Config.pm:sub new {
+./lib/Anna/Config.pm:sub empty_db {
+./lib/Anna/Config.pm:sub exists {
+./lib/Anna/Config.pm:sub key_exists_in_db {
+./lib/Anna/Config.pm:sub update_db {
+./lib/Anna/Config.pm:sub parse_configfile {
+./lib/Anna/Config.pm:sub set {
+./lib/Anna/Config.pm:sub get {
+./lib/Anna/Config.pm:sub toggle {
+./lib/Anna/Config.pm:## sub delete
+./lib/Anna/Config.pm:sub delete {
+./lib/Anna/Debug.pm:sub _default {
+./lib/Anna/Utils.pm:sub version {
+./lib/Anna/Utils.pm:sub usage {
+./lib/Anna/Utils.pm:sub error {
+./lib/Anna/Utils.pm:sub warning {
+./lib/Anna/Utils.pm:sub colour {
+./lib/Anna/Utils.pm:sub trim {
+./lib/Anna/Utils.pm:sub rtrim {
+./lib/Anna/Utils.pm:sub ltrim {
+./lib/Anna/Utils.pm:sub calc_diff {
+./lib/Anna/Utils.pm:sub print_time {
+./lib/Anna/Output.pm:sub irclog {
+./lib/Anna/Connection.pm:sub do_autoping() {
+./lib/Anna/Connection.pm:sub do_connect() {
+./lib/Anna/Connection.pm:sub do_reconnect() {
+Binary file ./lib/Anna/.Module.pm.swp matches
+./lib/Anna/Module.pm:sub empty_db {
+./lib/Anna/Module.pm:sub execute {
+./lib/Anna/Module.pm:		$sub = $row->{'sub'};
+./lib/Anna/Module.pm:sub load {
+./lib/Anna/Module.pm:sub unload {
+./lib/Anna/DB.pm:sub new {
+./lib/Anna/DB.pm:sub sync {
+./lib/Anna/DB.pm:sub DESTROY {
+./lib/Anna.pm:sub command_bind {
+./lib/Anna.pm:sub cmd_exists_in_db {
+Binary file ./lib/.Anna.pm.swp matches
+Binary file ./.refactor.swp matches
+./anna.pl:		'version|V' => sub { version(0) },
+./anna.pl:		'help|h|?' => sub { usage(0) }
+./anna.pl:#		sub POE::Kernel::ASSERT_DEFAULT () { 1 }
+./anna.pl:#		sub POE::Kernel::TRACE_SIGNALS ()  { 1 }
+./anna.pl:		_child			=> sub { "DUMMY" },
+./anna.pl:		irc_isupport		=> sub { "DUMMY" },
+./anna.pl:		irc_ping		=> sub { "DUMMY" },
+./anna.pl:		irc_registered		=> sub { "DUMMY" },
+./anna.pl:		irc_plugin_add		=> sub { "DUMMY" },
+./anna.pl:		irc_plugin_del		=> sub { "DUMMY" },
+./anna.pl:sub _start {
+./anna.pl:sub create_rootuser {
+./anna.pl:sub parse_message {
+./anna.pl:sub bot_addanswer {
+./anna.pl:sub bot_addlart {
+./anna.pl:sub bot_addop {
+./anna.pl:sub bot_addorder {
+./anna.pl:sub bot_addquote {
+./anna.pl:sub bot_answer {
+./anna.pl:sub bot_auth {
+./anna.pl:sub bot_bash {
+./anna.pl:sub bot_dice {
+./anna.pl:sub bot_fortune {
+./anna.pl:sub bot_googlesearch {
+./anna.pl:sub bot_karma {
+./anna.pl:sub bot_karma_update {
+./anna.pl:sub bot_lart {
+./anna.pl:sub bot_lastseen {
+./anna.pl:sub bot_lastseen_newmsg {
+./anna.pl:sub bot_mynotes {
+./anna.pl:sub bot_note {
+./anna.pl:sub bot_op {
+./anna.pl:# This sub should just return FALSE and then instead send an action
+./anna.pl:sub bot_order {
+./anna.pl:sub bot_quote {
+./anna.pl:sub bot_reload {
+./anna.pl:sub bot_register {
+./anna.pl:sub bot_rmop {
+./anna.pl:sub bot_rot13 {
+./anna.pl:sub bot_roulette {
+./anna.pl:sub bot_roulette_stats {
+./anna.pl:sub bot_search {
+./anna.pl:sub bot_uptime {
+./anna.pl:sub bot_voice {
+./anna.pl:#sub do_autoping {
+./anna.pl:#sub do_connect {
+./anna.pl:#sub do_reconnect {
+./anna.pl:sub err_nick_taken {
+./anna.pl:sub err_4xx_default {
+./anna.pl:sub on_324 {
+./anna.pl:sub on_329 {
+./anna.pl:sub on_332 {
+./anna.pl:sub on_333 {
+./anna.pl:sub on_namreply {
+./anna.pl:sub on_msg {
+./anna.pl:sub on_public {
+./anna.pl:sub on_notice {
+./anna.pl:sub on_connect {
+./anna.pl:sub on_connected {
+./anna.pl:sub on_join {
+./anna.pl:sub on_kill {
+./anna.pl:sub on_part {
+./anna.pl:sub on_quit {
+./anna.pl:sub on_nick {
+./anna.pl:sub on_topic {
+./anna.pl:sub on_mode {
+./anna.pl:sub on_disconnected {
+./anna.pl:sub on_error {
+./anna.pl:sub on_socketerr {
+./anna.pl:sub on_kick {
+./anna.pl:sub ABORT {
+./refactor:is found, Anna^ will call the Anna::Module::module_name::sub that's associated with the specific command

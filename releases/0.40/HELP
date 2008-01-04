@@ -1,0 +1,293 @@
+Anna^ IRC Bot Documentation
+---------------------------
+
+Table of contents:
+1) Anna^ IRC Bot
+1.1) What Anna^ is
+1.2) What Anna^ isn't
+2) Installation
+3) Configuration
+4) First run
+5) In-IRC setup
+6) Features
+6.1) Standard features
+6.2) Private features
+6.3) Sessions
+6.4) Misc. features and concepts
+
+
+1) Anna^ IRC Bot
+----------------
+
+1.1) What Anna^ is
+------------------
+Anna^ is a small, versatile IRC-bot written in perl. She uses POE and the 
+POE::Component::IRC interface to communicate with an IRC-server and act as a 
+bot. Anna^ can connect to one server and handle one channel at the moment (this
+is due to change as development charges onwards). Besides, Anna^ can handle 
+messages sent directly to her. Anna^ has a multitude of functions, and is quite
+easy to extend. In the near future, it will be possible to write external 
+modules, rather than changing the script to add functionality. See section 6 
+for more on Anna^'s feature-set. Anna^ aims to be easy to get up and running, 
+with some functionality, rather than require a lot of configuration beforehand.
+
+1.2) What Anna^ isn't
+---------------------
+Anna^ is not an IRC-server, nor is she a DCC fserve, an XDCC-bot or the like
+(although it's quite possible to extend Anna^ to serve as a fserve or XDCC-bot)
+Anna^ is not well-suited as a spambot, mainly due to the built-in throttling of
+POE::Component::IRC.
+Anna^ is not yet fully developed, nor is she anywhere near that state.
+
+2) Installation
+---------------
+Installation instructions along with requirements can be found in the INSTALL 
+document. Per default, Anna^ will install herself in /usr/local/bin, and she 
+will install files in /etc and /usr/local/share/anna/. On first-run, Anna^ will
+create a directory in the users homedir called .anna, where the database, local
+configuration and logfiles will be stored. If you have several bots running and
+don't want to use the same database for each bot, you can specify a path to the
+database in the configuration file or from the command-line.
+
+3) Configuration
+----------------
+Once Anna^ is installed, a configuration file, /etc/anna.conf is available.
+You can either edit this, or use the local configuration file ~/.anna/config 
+(created on first-run). The configuration files follow a simple associative 
+"key = value"-syntax where everything to the right of the equal-sign (except 
+for whitespace) is treated as the value of the key. The keys (not the values)
+are case-insensitive. Lines beginning with # or [ (section dividers) are 
+treated as comments. Empty lines doesn't matter.
+
+The following keys are currently understood: 
+<int> = integer, <str> = string, <bool> = 1 (true) or 0 (false)
+
+server = <str>: 	the URL of the irc-server Anna^ should connect to 
+			(without irc://)
+port = <int>:		the server-port to use. Default is 6667
+nickname = <str>:	the nickname Anna^ will connect with. Default is Anna^
+username = <str>:	the username Anna^ will connect with. Default in anna
+channel = #<str>:	the channel Anna^ should join upon successful 
+			connection. Anna^ will not prepend a # if it isn't 
+			there
+ircname = <str>:	the ircname (see whois output). Default is Boten Anna
+nspasswd = <str>:	if set, Anna^ will identify herself with Nickserv upon
+			successful connection. Anna^ will also reclaim her 
+			nick if it was taken.
+dbfile = <str>:		path of the database-file Anna^ will use. Default is
+			~/.anna/anna.db
+colour = <bool>:	if true, Anna^ will colour the output to the terminal 
+			(note: this is not the output to the IRC-server)
+silent = <bool>:	if true, Anna^ will stay very silent, only informing 
+			about crucial events.
+verbose = <bool>:	if true, Anna^ will speak all the time (she is a girl,
+			after all)
+logging = <bool>:	if true, AnnaÅ will log all activity to logfiles
+trigger = <str>:	this is the trigger all commands should be prefixed 
+			with. Default is !
+bannedwords = <str>:	a space-separated list of banned words. You can use 
+			regexp-like features here. If Anna^ sees a banned word
+			in a public channel, she will kick the user.
+voice_auth = <bool>:	if true, Anna^ will voice authenticated users.
+
+Any settings in the local configuration file automatically overwrites the 
+systemwide file.
+
+It is possible to specify a number of these options as command-line arguments
+when running Anna^. Refer to the output of `anna --help` for more info.
+
+4) First run
+------------
+The first time you run Anna^, she will copy the default database and 
+configuration-file to your home-directory. She will then prompt you for
+a username and a password for the root-user. The root-user will be able to 
+control various aspects of Anna^ from within IRC.
+On the first run after an upgrade, Anna^ will perform updates to the database
+structure or content if necessary. Should these fail, a backup copy of the
+database will be stored in ~/.anna.
+
+5) In-IRC setup
+---------------
+It is possible to control various settings from within IRC. Most notably is the 
+auto-op interface. Anna^ can maintain a list of registered users, that should 
+be opped. In order to modify that list, you must be flagged as a bot admin. 
+Currently, the user you created on the first run has this flag.
+The two functions addop and rmop will allow you to add or remove a user 
+registered with Anna^ from the list of channel operators.
+
+6) Features
+-----------
+
+6.1) Standard features
+----------------------
+Anna^ has a multitude of features available in the public channel Anna^ resides
+in as well as in private conversations. 
+Anna^ will respond to most of these either through !<cmd> or Anna^[ :,-] <cmd>
+The current list of commands (as of 0.40) is as follows:
+<int> is an integer, <str> is a string
+
+!dice <int1>d<int2>	
+Returns the result of a dicethrow of <int1> dice with  <int2> sides
+
+!voice/!voiceme
+Voices a (registered) user in the channel, if enabled in the configuration
+
+!rstats
+Prints statistical information about played roulette-games
+
+!search <str1> [<str2>]
+Searches the database for notes or quotes matching a string.
+If <str2> is present, Anna^ will treat <str1> as a content indicator and <str2>
+as the search-string. Possible content indicators are 'notes', 'quotes' and 
+'all'.
+If <str2> isn't present, Anna^ will implicitly assume that !search all <str1>
+was called.
+
+!rot13 <str>
+Return rot13-encrypted <str>
+rot13 is a very weak encryption, often used to avoid spoiling in forums, IRC or
+newsgroups.
+
+!note [<str1>[ = <str2]]
+!note without any arguments prints a random note from the database.
+!note <str1> prints the note with the matching key <str1>
+!note <str1> = <str2> adds a new note to the database, with <str1> as key and
+<str2> as the actual note.
+
+!google [<int>] <str>
+Searches google for <str>. If <int> is set to a positive integer, it returns 
+the first <int> hits, otherwise it returns the first hit.
+
+!fortune [<str>]
+fortune calls the good ol' fortune from *nix systems. Fortune accepts some 
+optional parameters, such as -a, -e and -o (refer to fortune documentation) as
+well as a package-name, to select fortunes from.
+
+!karma <str>
+Returns karma information for the nick <str>. Refer to karma documentation in 
+section 6.4.
+
+!quote
+Returns a random quote from the database.
+
+!addquote <str>
+Add the <str>-quote to the database
+
+!bash <str>
+Returns a quote from the bash online collection of IRC-quotes.
+If <str> is a number (with or without a # prefixed), Anna^ will print that 
+specific quote# from the bash database. If <str> is 'random' or unset, Anna^
+will print a random quote.
+
+!roulette
+Test your luck in this game of russian roulette. If you lose in a public 
+channel, Anna^ will boot you out (if she can). Don't be a coward!
+
+!reload
+Reload is for sissies, but will nonetheless allow you to reload Anna^'s gun in
+a game of roulette.
+
+!question <str>
+Ask a question of Anna^ and she will give you the profound truth... sometimes
+You can also ask Anna^ directly: Anna^: <question>?
+
+!addanswer <str>
+Add yet another profound truth to Anna^'s collection.
+
+!up/!uptime
+Returns the time the current session has lasted.
+
+!lart <str>
+A LART (Luser Attitude Readjustment Tool). Throws a random insult after <str>.
+If <str> is 'me', Anna^ will insult YOU!
+
+!addlart <str>
+Adds another insult to Anna^'s collection. <str> _must_ contain '##' (two 
+hashmarks) which will be substituted with the name of the luser.
+
+!haiku
+Returns a random haiku
+
+!addhaiku <str1> ## <str2> ## <str3>
+Add a threeline (str1, str2 and str3) haiku to Anna^'s collection.
+
+!order <str1>[ for <str2>]
+Go ahead, why not order a nice <str1> from the bar? Or why not order
+<str1> for your good friend, <str2>? Anna^ has a large assortment of goods, 
+including beer, peanuts, coffee, chimay and anything else you can think up
+
+!addorder <str1> = <str2>
+Add a custom item, <str1> to Anna^'s assortment. <str2> is the message you will
+get when you order the item. This _must_ include '##' (two hashmarks) which is
+substituted for the username.
+
+!seen <str>
+Return information on when Anna^ last saw <str> (a nickname).
+
+!op
+Op yourself, if you have the rights.
+
+Besides these commands, there are a couple or shortcuts and other features:
+
+"Anna^: <str1> or <str2>"
+Anna^ will decide for you whether <str1> or <str2> is the right thing.
+
+"Anna^: <int1>d<int2>"
+A shortcut to !dice <int1>d<int2>
+
+"Anna^: <str>?"
+Shortcut to !question <str>
+
+"<str>++" or "<str>--"
+Increase or descrease the karma of <str> (see section 6.4 for more info on 
+karma)
+
+There are various other things Anna^ will respond to, so don't get surprised if
+she yaps all of a sudden.
+
+6.2) Private features
+---------------------
+There are a couple of commands, that Anna^ will only respond to in private:
+<int> = integer, <str> = string
+
+auth <str1> [<str2>]
+(NOTE: there's no trigger prefix for this!)
+If both <str1> and <str2> are set, Anna^ will attempt to authenticate the user
+with <str1> as username and <str2> as password. Otherwise, Anna^ will assume 
+that the nickname is the same as the username. See section 6.3 for more on 
+sessions.
+
+!addop <str>
+Add <str> to the list of channel operators (requires admin privs)
+
+!rmop <str>
+Remove <str> from the list of channe loperators (requires admin privs)
+
+!register <str1> <str2>
+Register with Anna^ with <str1> as username and <str2> as password.
+
+6.3) Sessions
+-------------
+Sessions are new from 0.40. Sessions allow you to register with Anna^ and
+later on identify yourself towards the bot. This makes it possible to keep a
+list of operators or to store information for yourself within Anna^'s database.
+Keep in mind, that no matter what, the bot operator can snoop both the 
+information and you password, because IRC operates in plaintext, so don't use
+your $TOPSECRET password for this.
+You can register with the !register directive, identify yourself with the auth
+command, and as an admin, you can add or remove users from the channel operator
+list with !addop and !rmop. If enabled, registered users can be voiced in 
+channel.
+
+6.4) Misc. features and concepts
+--------------------------------
+
+The karma principle
+-------------------
+Everything in lives revolves around karma. Whenever you do something in life, a
+samskara-seed is stored for you for later use. You can't control this, it just 
+happens. In IRC, like everywhere else, you have karma. In IRC, however, your 
+peers judge you - so you better behave :)
+Anna^ keeps track of karma, and you can reward or subtract good karma with the
+<str>++ and <str>-- directives (see 6.1). You can see the karma of <str> with 
+the !karma command.

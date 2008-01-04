@@ -1,0 +1,169 @@
+Anna^ IRC Bot CHANGELOG
+
+0.01: Sun Jul 23 22:14:49 CEST 2006
+	- Initial version by arkanoid
+
+0.10 Tue Aug  8 22:05:13 CEST 2006
+	- Bot works now, and actually does stuff - Woo!
+	- Most of the IRC protocol and CTCP implemented
+	- Most settings can be tweaked from command-line
+	- SQLite integrated
+	- Several replies to various phrases added
+	- Some functions added:
+		- Haiku - print random haikus to a channel or in privmsg
+		- Addhaiku - add a haiku to the database
+		- Lart - print random insult against a luser
+		- Addlart - add insult to the database
+		- Seen - query for information about users and when they last 
+		  were active
+		- Up - print uptime of the bot
+		- Order - order some beer from the bar... or what about some 
+		  ice-cold pepsi? 
+
+0.20 Sat Sep  2 21:43:07 CEST 2006
+	- Lastseen now handles quits, parts and joins correctly
+	- Auto-op'ing of users. Currently maintained in the file. DB interface
+	  is planned.
+	- Kicks are now shown correctly
+	- New functions:
+		- Question - Anna^ now responds to any message to her that ends
+		  with a ?. She also answers !question <question>
+		- Roulette - Or rather... russian roulette. Lose, and you'll 
+		  get kicked (provided Anna^has the rights).
+		  Type '!roulette' and get shot. Type '!reload' if you're a 
+		  weenie.
+		- Bash - type !bash #<number> or !bash random and Anna^ returns
+		  the corresponding quote (or a random one) from the bash quote
+		  database (http://bash.org).
+		- Quote - Save quotes and displays random quotes on !quote 
+		- Karma - That's right, show the world who/what you like (and 
+		  dislike) through this brand new and unoriginal karma system 
+		  (work--, anyone?)
+		- Fortunes - yep, that's right. If the fortune app is installed
+		  and in your path, your can use !fortune
+		- Google - search google. Anna^ returns the first result found.
+	- New requirements:
+		- LWP::UserAgent module is now required as well. It is used for 
+		  bash and google functions and will be used for other website-
+		  interaction later.
+	- Several minor cleanups
+	- Fixed !order-bug. !order <item> for <nick> now works correctly
+	- Running Anna^ with --help or -h on the command-line now prints usage
+	  information
+
+0.21 Wed Sep  6 19:29:16 CEST 2006
+	- Bugfix - parsing of command-line now works properly!
+
+0.30 Sat Nov 25 19:47:58 CET 2006
+	- Anna^ now recovers her nick correctly. Rejoice! (Bug since 0.10).
+	- Anna^ catches SIGINT and disconnect properly from irc and the 
+	  database.
+	- Ircname is now set correctly... blame lame Net::IRC documentation.
+	- (internal) trim functions added. Input will now be trimmed for 
+	  whitespace.
+	- (internal) command-line arguments are now parsed with getopt::long
+	- Added check for database file.
+	- Experimental color-coding of terminal output. I'm not sure if I'll 
+	  keep it. In other news, subroutine warning() now handles warnings and
+	  error() make errors a little more spiffy.
+	- Improved parsing of HTML source.
+	- You can now specify how many results a google search should return.
+	  use !google <int> <query>. Otherwise, google will return the first
+	  result. A new range-search concept has been added to todo as well.
+	- Squashed bug that nix'ed newlines from privmsg output.
+	- You no longer get booted from #channel if you lose in a private game
+	  of roulette.
+	- !fortune now accepts -a, -o and -e as well as a packagename.
+	- !lart me makes Anna^ insult YOU!
+	- Specify your own trigger. You no longer _have_ to use !. Just change
+	  the $trigger variable.
+	- Use --silent to suppress all output to the terminal. --verbose still
+	  overrides this.
+	- No more SQL injection vulnerabilities (hopefully).
+	- !google now displays correct number of results.
+	- (internal) colour()-routine now handles colourization of strings.
+	- Notices are now printed on stdout, unless the --silent flag is used.
+	- Nick changes no longer invokes a quit notice.
+	- Orders have been moved to the database.
+	- Anna^ now checks for the presence of /etc/anna.conf and 
+	  ~/.anna/config and uses those two instead of default values.
+	  Precedence is as follows: cmd-line > configfiles > default values.
+	- Anna^ will now kick users that utter a banned word. You can define
+	  banned words in the configuration file.
+	- Makefile added - use su -c "make install" to install anna.
+	- New first-run check will copy config and db if they aren't present.
+	- New anna_init subroutine will take care of initial checks
+	- Don't lowercase nicks when nicks are changed (happened due to 
+	  lastseen functionality)
+	- Handle kills properly (don't appear to be trying to reconnect)
+	- More consistency and fewer deadly sins... hooray! \o/
+	- Autpdetect database version and update if out of sync
+	- (internal) Use constants, not variables for stuff that really are 
+	  constant during the session.
+	- Output will only be colourized if STDOUT is a tty. This might create
+	  a problem with output going to STDERR, but since this _should_ be 
+	  sent through error() anyway, I've added a check for STDERR->tty 
+	  there.
+	- Quoting of messages in lastseen-system fixed.
+	- (internal) escape_shell()-function added. Escapes a string for use
+	  in a shell environment.
+	- Flagparsing i !fortune fixed.
+	- New functions:
+		- Note - yep, a note-taking system (somewhat). Syntax is 
+		  !note <text1> = <text2> where <text1> is a short identifier
+		  and <text2> is the note. View a note with !note <text1>.
+		  !calc without anything prints a random note.
+		- Mynotes - show all notes belonging to yourself, with 
+		  !mynotes. Send Anna^ a privmsg to see all if you have more
+		  than 15.
+		- Rot13 - translate rot13-strings with !rot13 <string>
+		- Search - use !search to search various tables in Anna^'s
+		  database. So far, you can use 'notes', 'quotes' and 'all'.
+		  Syntax is !search <table> <str>.
+		- !addorder - add a new order to the database. Syntax is
+		  !addorder <key> = <order>, and <order> must contain
+		  the string "##".
+		- !rstats - print statistical information from roulette games.
+	- New requirements:
+		- Perl module HTML::Parser (for HTML::Entities)
+
+0.40 Thu May 17 17:02:20 CEST 2007
+	- More stable Makefile
+	- Altered !search to work with only a keyword (no table). !search 
+	  <keyword> is equivalent to !search all <keyword>.
+	- POE implemented with a lot of minor internal changes and cleanup
+	- Handle kills appropriately (for now, we will reconnect... this is 
+	  probably bound to change)
+	- Added debug flag to toggle debug output on/off
+	- Print a list of users when joining a channel
+	- Altered behaviour of search mechanism. !search <keyword> is now 
+	  equivalent to !search all <keyword>
+	- Anna^ sets mode +i on successful connect from now on.
+	- When parsing messages, handle [ ,:-] (space, comma, colon, dash) as
+	  possible nick/message separators.
+	- Logging: Anna^ can now log stuff to logfiles. ~/.anna/logs/anna.log 
+	  logs main bot events, while activity in respective channels are 
+	  logged as  network/#channel.log. The same goes for privmsgs.
+	  Logging can be controlled from the config-file (see docs for more 
+	  info)
+	- Session-handling. It is now possible to register with Anna^. 
+	  Registered users can be voiced or opped or made bot admins (grants
+	  additional rights to control Anna^) See docs for more info.
+	  On first-run, Anna^ will let you create a root-user for the bot.
+	- Anna^ makes a backup-copy of the database, before attempting an 
+	  upgrade.
+	- The escape_shell()-function have been abandoned in favour of perls 
+	  builtin qx()
+	- Bugfix: Anna^ no longer uses any hardcoded paths for the database
+	- Bugfix: Anna^ only attempts to parse a config-file, if the 
+	  permissions are correct. In the future, we might throw a warning when
+	  permissions are wrong.
+	- Bugfix: handle quits/parts with empty statements without warnings.
+	- Bugfix: missed param in on_topic
+	- Bugfix: handle parts without a message
+	- Bugfix: nix'd warning in googlesearch
+	- Bugfix: on first run, don't attempt to connect to the database 
+	  before  it's copied over
+	- Bugfix: make !lart me work properly again
+	- Misc. minor bugfixes
+	

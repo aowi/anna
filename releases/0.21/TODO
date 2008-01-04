@@ -1,0 +1,39 @@
+ == Todo for Anna^ ==
+- Change nick after Ghost'ing
+- Pass options to fortune (-m, -a, 'pack', etc).
+- Add roulette stats
+- Search/scan function for quotes
+- Google-search
+- Calc-system
+- Trim whitespace at the end of input (comes from nick-completion, etc)
+- Handle Netplits properly (two servers in quit msgs)
+- /nick invokes quit message as well :/
+
+Blockers for 0.5
+----------------
+
+Implement per-network/channel-databases, something like:
+~/.anna/anna_$network_$channel.db
+We need to use two sets of dbs... a global (per-network) one, that holds user 
+information and which users that privmsg can use, and a per-channel one.
+Auto-create #channel.anna.db.
+
+Modularization - make anna import all command-functionality from external 
+"modules"
+
+Blockers for 1.0
+----------------
+
+AniDB-UDP-interface: 
+http://wiki.anidb.info/w/UDP_API_Definition (for version 1.0)
+
+Command-line interaction
+
+DB-interface to Auto-op'ing
+
+Authentication
+ -> Interface to manage:
+    |- Settings
+    |- Personal notes
+    |- Automatic anidb auth'ing
+    `- Auto-op'ing

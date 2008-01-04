@@ -1,0 +1,56 @@
+Feature-list
+------------
+Commands are with either !<cmd> or <nick>: <cmd>
+
+!google <query> - search google.
+!fortune - print fortune (from fortune -s).
+!karma <word> - display karma for <word>.
+<word>++/-- - increase or decrease karma for <word>.
+!quote - print random quote from database.
+!addquote <quote> - add <quote> to database. Use \n for newlines.
+!bash (<number>|random) - print quote number <number> or a random one from 
+			  bash.org.
+!roulette - shoot yourself.
+!reload - reload roulette.
+!question <question>? - Get a profound answer from the bot. Anna^ responds to
+			anything that ends with "?".
+!addanswer <answer> - add one of the aforementioned answers to Anna^'s database
+!up(time) - print uptime of the bot.
+!lart <word> - make Anna^ insult <word>.
+!addlart <lart> - add insult to the database. The insult must include "##",
+		  which will be replaced with the word to insult.
+!haiku - print random haiku.
+!addhaiku <line1> ## <line2> ## <line3> - add haiku to the database.
+!dice <num1>d<num2> - roll <num1> dice with <num2> sides.
+!order <item> [for <nick>] - make Anna^ serve <item> [to <nick>].
+!seen <nick> - make Anna^ print information for when she last saw <nick>.
+!meh - print ~meh.
+<botnick>: poke - poke the bot.
+
+Usage
+-----
+Anna^ IRC Bot version 0.2
+Usage: perl anna.pl [OPTION]...
+
+Mandatory arguments to long options are mandatory for short options too.
+  -a, --name <name>		set the realname of the bot. This is not the
+  				nickname!
+  -c, --channel <channel>	set the channel to join.
+  -s, --server <server>		set the server to connect to.
+  -n, --nick <nick>		set the nickname of the bot. Default is Anna^
+  -u, --username <user>		set the username of the bot.
+  -p, --port <port>		set the port to connect to. Default is 6667
+  -P, --nspasswd <passwd>	authorize with nickserv using <passwd> upon
+  				successfull connection.
+  -D, --dbfile <file>		specify the SQLite3 database-file.
+  -v, --verbose			print verbose information.
+  -V, --version			print version information and exit.
+  -h, --help			show this message.
+
+Note: 	specifying your nickserv password on the command-line is unsafe. You 
+	should set it in the file instead.
+
+All options listed here can be set within the file as well.
+Anna^ IRC Bot is a small and versatile IRC-bot with various functionality.
+
+Please report bugs to and@vmn.dk

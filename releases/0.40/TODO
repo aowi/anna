@@ -1,0 +1,126 @@
+ == Todo for Anna^ ==
+Outstanding issues
+------------------
+- Invalidate auths when user QUITs
+- -P without an argument makes anna prompt for password (safer)
+- Parse <int> as range in googlesearch (3 equals hit #3, 1-3 equals #1, #2 & 
+  #3). => bjuhn
+- Handle Netplits properly (two servers in quit msgs)
+- Make colouring work on various terminals...
+(- Check if Anna^ is running interactively or not) partly solved.
+- Do some more error-checking:
+ - Check if modules exists before trying to use them.
+ - Improve on the colour-checks for redirected output
+- Make user lists _much_ prettier (and supress irc_366 (endofnames)).
+- Make the database acknowledge RaiseError = 0;
+
+Features
+--------
+- Babelfish
+- !expand - regexp-based expander mechanism
+- Make up excuses
+- Math evaluation
+- Spellchecker
+- Trivia
+- Flood protection
+
+Blockers for 0.4
+----------------
+POE::IRC (done)
+Basic authentication based on db (done)
+Make it possible to auto-op auth'ed users (done)
+Prompt for admin user on first run (done)
+Get rid of that nasty warning when disconnecting in first-run routine. (done)
+Update docs for release (done)
+
+Blockers for 0.5
+----------------
+Move parsing of command options from parse_message to the relevant routines
+In-irc help function as well as syntax help of commands with wrong syntax
+Add option to check for voice/op for some commands (notably !add-stuff)
+Functions should be able to register for irc_events and act upon them (or 
+Coloured output to irc
+Command-line interaction
+Modularization - make anna import all command-functionality from external 
+"modules"
+Do some memory optimization stuff
+Invalidate auth on QUIT
+
+
+Blockers for 0.60
+-----------------
+Implement per-network/channel-databases, something like:
+~/.anna/anna_$network_$channel.db
+We need to use two sets of dbs... a global (per-network) one, that holds user 
+information and which users that privmsg can use, and a per-channel one.
+Auto-create #channel.anna.db.
+Advanced Authentication, including interface to manage:
+    |- Settings
+    |- Personal notes
+    |- Automatic anidb auth'ing
+    `- Auto-op'ing
+
+
+Blockers for 1.0
+----------------
+AniDB-UDP-interface: 
+http://wiki.anidb.info/w/UDP_API_Definition (for version 1.0)
+
+Modularization
+--------------
+Anna^ should read a list of hooks from the libs. Hooks are somewhat of the form
+subname, reg-exp, options. Anna^ should then call the relevant sub when she 
+tracks the regexp in use with the entire message, along with a shitload of 
+other information. The subroutine should then return a single scalar or array 
+to be printed to the return target. The target is the origin of the message, 
+so privmsgs to a #channel will go there, and privmsgs directly to Anna^ should 
+be returned to the user.
+
+The hook-options should consist of limitations in 'scanning area' (ie. listen 
+only to privmsgs directly to anna, listen only to users with special modes 
+[+o, whatever] etc. etc.).
+
+Schematic:
++ Anna^
+|- modules/core/CoreModule
+|- modules/NonCoreModule
+|- modules/auto/NCM -> ../NonCoreModule
+|- lib/Input
+|- lib/Output
+`- lib/DB
+
+A POE::Session should be available to each module, for setting timeouts and the
+like.
+Anna^ loads * from modules/core and modules/auto (the rest can be loaded from 
+irc or cli). modules/auto should contain symlinks to modules in modules/.
+For each modules, Anna^ calls module::init(), which in turn request hooks and 
+sets up initial stuff.
+
+ALT: Anna^ calls module->new, which returns a blessed reference to a hash.
+Anna^ then sends everything that fits a filter through module->msg (or like 
+that).
+Hash = {
+	filters => {
+		sub => {
+			filter => level (pub|priv|undef)
+			'privs' => (op|hop|voice|undef)
+		},
+		sub2 => {
+			filter => level
+		}
+	},
+	events => { # Event are on_*
+		event => sub
+		event2 => sub2
+		etc...
+	},
+}
+
+Other methods:
+->version 	- return current module-version
+->author  	- return module author
+(->license	- return module license)
+->bot_version	- version of Anna^ the module was written against
+->description	- what the module does
+->usage		- short usage (syntax) description
+

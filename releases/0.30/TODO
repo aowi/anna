@@ -1,0 +1,56 @@
+ == Todo for Anna^ ==
+- -P without an argument makes anna prompt for password (safer)
+- Logfile
+- Parse <int> as range in googlesearch (3 equals hit #3, 1-3 equals #1, #2 & 
+  #3). => bjuhn
+- Handle Netplits properly (two servers in quit msgs)
+- Make colouring work on various terminals...
+(- Check if Anna^ is running interactively or not) partly solved.
+- Add option to check for voice/op for some commands (notably !add-stuff)
+- Rewrite anna and make her use POE::IRC (or whatever it's called) instead
+- Do some more error-checking:
+ - Check if modules exists before trying to use them.
+ - Improve on the colour-checks for redirected output
+
+Features
+--------
+- Babelfish
+- Make up excuses
+- Math evaluation
+- Spellchecker
+- Trivia
+- Flood protection
+
+Blockers for 0.4
+----------------
+POE::IRC
+Basic authentication based on db
+Make it possible to auto-op auth'ed users
+
+Blockers for 0.5
+----------------
+
+Command-line interaction
+Implement per-network/channel-databases, something like:
+~/.anna/anna_$network_$channel.db
+We need to use two sets of dbs... a global (per-network) one, that holds user 
+information and which users that privmsg can use, and a per-channel one.
+Auto-create #channel.anna.db.
+
+Modularization - make anna import all command-functionality from external 
+"modules"
+
+Blockers for 1.0
+----------------
+
+AniDB-UDP-interface: 
+http://wiki.anidb.info/w/UDP_API_Definition (for version 1.0)
+
+
+DB-interface to Auto-op'ing
+
+Advanced Authentication, including interface to manage:
+    |- Settings
+    |- Personal notes
+    |- Automatic anidb auth'ing
+    `- Auto-op'ing

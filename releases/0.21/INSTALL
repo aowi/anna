@@ -1,0 +1,23 @@
+Installation instructions
+-------------------------
+
+== Requirements ==
+If you find that this script works with any older versions of these 
+applications, please drop me a note at and@vmn.dk.
+
+Perl version 5.8.8 or later
+Fortune (for !fortune functionality)
+
+= Perl modules =
+Net::IRC v.0.75
+DBI v.1.52
+DBD::SQLite v.1.12
+LWP::UserAgent v.5.805
+
+== Installation ==
+1) Copy anna.db to ~/.anna/anna.db
+2) Run Anna^ with `perl anna.pl`
+3) ???
+4) PROFIT!
+Note: You may specify where anna.db is located on the command-line or in the 
+file, so you don't nescessarily have to place it in ~/.anna/.
