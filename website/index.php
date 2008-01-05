@@ -15,6 +15,7 @@
 	  </div>
 	  <div class='sidebar_box_content'>
 	    <a class='menu' href='./?p=home'>Home</a><br />
+	    <a class='menu' href='./?p=about'>About</a><br />
 	    <a class='menu' href='./?p=development'>Development</a><br />
 	    <a class='menu' href='./?p=documentation'>Documentation</a><br />
 	    <a class='menu' href='./?download'>Download</a><br />
