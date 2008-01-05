@@ -12,7 +12,12 @@
 		moment. Started in august 2006, the project is still young and is
 		currently maintained by two persons. But Anna^ is growing fast in
 		regards to features and possibilities.</p>
-	<p>The current version of Anna^ is the 0.40 "lacuna" release. This release featured a new session system, automatic logging, a reqrite to POE and a lot of bug fixes and added stability. You can grab the latest release at <a href='http://sourceforge.net/project/showfiles.php?group_id=180743'>the SF.net download page</a>. Don't forget to submit bugs and wishes to us!</p>
+		<p>The current version of Anna^ is the 0.40 "lacuna" release. 
+		This release featured a new session system, automatic logging, a 
+		rewrite to POE and a lot of bug fixes and added stability. You 
+		can grab the latest release at the 
+		<a href='./?download'>download page</a>. Don't forget to submit 
+		bugs and wishes to us!</p>
 	</div>
 	<div class='main_box_head'><span class='main_head'>Latest news</span></div>
 	<div class='main_box_content'>
