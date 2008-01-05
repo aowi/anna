@@ -10,7 +10,7 @@
   <p>Anna^ is highly modularised and all user-related features have been put in
   individual modules, that can be enabled or disabled at will. A few modules are
   marked as core-modules, and these are necessary for Anna^ to work properly. 
-  But none of these modules will send any msgs to the channels Anna^ watch per
+  But none of these modules will send any privmsgs to the channels Anna^ watch per
   default, so Anna^ will remain silent unless additional modules are loaded. This
   is great if you want a lean'n'mean bot that doesn't seek attention.</p>
   <p>By default, Anna^ can do the following:<br />
