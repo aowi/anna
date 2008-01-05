@@ -1,7 +1,17 @@
 <div class='main_box'>
 	<div class='main_box_head'><span class='main_head'>Welcome</span></div>
 	<div class='main_box_content'>
-		<p>Anna^ IRC Bot is a small bot written in perl with a multitude of features, ranging from basic storage of notes to interaction with external web services such as google and <a href='http://bash.org'>bash.org</a>. Originally based on some scripts for the <a href='http://irssi.org'>irssi irc client</a>, Anna^ has grown into a full-fledged irc bot capable of many things. Through the POE framework for perl, Anna^ delivers quick responses to queries and handles most of the IRC protocol at the moment. And the rest is coming soon. Being launched in august 2006, the project is still young and is currently maintained by two persons. But Anna^ is growing fast in regards to features and possibilities.</p>
+		<p>Anna^ IRC Bot is a small bot written in perl with a multitude 
+		of features, ranging from basic storage of notes to interaction 
+		with external web services such as google and 
+		<a href='http://bash.org'>bash.org</a>. Originally based on some 
+		scripts for the <a href='http://irssi.org'>irssi irc client</a>, 
+		Anna^ has grown into a full-fledged irc bot capable of many 
+		things. Through the POE framework for perl, Anna^ delivers quick 
+		responses to queries and handles most of the IRC protocol at the 
+		moment. Started in august 2006, the project is still young and is
+		currently maintained by two persons. But Anna^ is growing fast in
+		regards to features and possibilities.</p>
 	<p>The current version of Anna^ is the 0.40 "lacuna" release. This release featured a new session system, automatic logging, a reqrite to POE and a lot of bug fixes and added stability. You can grab the latest release at <a href='http://sourceforge.net/project/showfiles.php?group_id=180743'>the SF.net download page</a>. Don't forget to submit bugs and wishes to us!</p>
 	</div>
 	<div class='main_box_head'><span class='main_head'>Latest news</span></div>
