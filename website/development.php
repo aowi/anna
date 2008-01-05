@@ -2,7 +2,11 @@
         <div class='main_box_head'><span class='main_head'>Development</span></div>
         <div class='main_box_content'>
 		<p>The development of Anna^ mainly takes place in irc channel #frokostgruppen on irc.blitzed.org. If you have any suggestions or would like to help out, this is the place to go. Anna^ follows a simple roadmap, that is subject to change at any given time, when it is found nescessary to add, edit or delete something.</p>
-		<p>The first thing to do, if you want to give a hand or use the code, is to get the lates svn snapshot from our <a href='http://sf.net/projects/anna'>SF.net project site</a>. The svn snapshot is pretty much always up-to-date, and a working version of the svn code can be found in #frokostgruppen, under the nickname "Anna^".</p>
+		<p>The first thing to do, if you want to give a hand or use the code, is to get the latest and greatest version from git:<br />
+		git-clone git://frokostgruppen.dk/var/git/anna.git<br />
+		The git-repo is pretty much always up-to-date, and a working 
+		version of the git code can be found in #frokostgruppen, on the 
+		IRC network blitzed under the nickname "Anna^".</p>
 		<p>The versioning of Anna^ uses the x.yz syntax, where z marks a bugfix-release, y marks a bigger release. x means that we went insane and rewrote Anna^ in ada or cobol or something like that.</p>
         </div><br />
         <div class='main_box_head'><span class='main_head'>Roadmap</span></div>
