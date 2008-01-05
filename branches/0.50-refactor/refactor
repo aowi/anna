@@ -119,3 +119,8 @@ On load, the module is eval'd in that particular namespace. Here, it can hook up
 the Anna::command_bind function, match regexps via Anna::regexp_bind and more. When an appropriate command
 is found, Anna^ will call the Anna::Module::module_name::sub that's associated with the specific command
 On unload, the namespace Anna::Module::module_name is destroyed (is this possible?)
+
+Git-stuff
+========
+git-clone git://frokostgruppen.dk/var/git/anna.git
+git-commit, git-push and so on
