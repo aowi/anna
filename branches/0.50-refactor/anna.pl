@@ -433,8 +433,6 @@ sub parse_message {
 		$out = bot_search($heap, $1);
 	} elsif ($cmd =~ /^rot13\s+(.*)$/i) {
 		$out = bot_rot13($heap, $1);
-	} elsif ($cmd =~ /^note(\s+(.*)|)$/i) {
-		$out = bot_note($heap, $2, $nick);
 	} elsif ($cmd =~ /^google\s+(.*)$/i) {
 		$out = bot_googlesearch($heap, $1);
 	} elsif ($cmd =~ /^fortune(\s+.*|)$/i) {
@@ -992,78 +990,6 @@ sub bot_lastseen_newmsg {
 }
 
 
-## bot_note
-# This manages calc-stuff. Calc is a small system to associate a word or 
-# little sentence with a longer sentence, answer, solution, retort, whatever.
-sub bot_note {
-	my ($heap, $note, $nick) = @_;
-	return unless (defined $heap && defined $nick);
-	
-	my ($dbh, $query, $sth, @row);
-	# Print random note if nothing is specified
-	unless ($note) {
-		$dbh = new Anna::DB;
-		$query = "SELECT * FROM notes";
-		$sth = $dbh->prepare($query);
-		$sth->execute();
-		
-		my (@words, @answers, @authors);
-		my $i = 0;
-		while (@row = $sth->fetchrow()) {
-			$words[$i] = $row[1];
-			$answers[$i] = $row[2];
-			$authors[$i] = $row[3];
-			$i++;
-		}
-		if ($i == 0) {
-			return "No notes found in database. You better start taking some notes!";
-		}
-		my $num = rand scalar @words;
-		return "* ".$words[$num]." = ".$answers[$num]." [added by ".$authors[$num]."]";
-	}
-	
-	# Find out what to do
-	if ($note =~ /^(.+?)\s*=\s*(.+)$/) {
-		# User want to insert a new quote
-		# Test if word exists
-		my $word = trim($1);
-		my $answer = trim($2);
-		return 'FALSE' if (($word eq '') or ($answer eq ''));
-		
-		$query = "SELECT * FROM notes WHERE word = ?";
-		$sth = $dbh->prepare($query);
-		$sth->execute($word);
-		if (@row = $sth->fetchrow()) {
-			if ($nick eq $row[3]) {
-				$query = "UPDATE notes SET answer = ? WHERE word = ?";
-				$sth = $dbh->prepare($query);
-				$sth->execute($answer, $word);
-				return "'".$word."' updated, thanks ".$nick."!";
-			}
-			return "Sorry ".$nick." - the word '".$word."' already exists in my database";
-		}
-		
-		# Insert new note
-		$query = "INSERT INTO notes (word, answer, author, date)
-			     VALUES (?, ?, ?, ".(int time).")";
-		$sth = $dbh->prepare($query);
-		$sth->execute($word, $answer, $nick);
-		return "'".$word."' added to the database, thanks ".$nick."!";
-	}
-	
-	$note = trim($note);
-	$query = "SELECT * FROM notes WHERE word = ?";
-	$sth = $dbh->prepare($query);
-	$sth->execute($note);
-	@row = '';
-	if (@row = $sth->fetchrow()) {
-		return "* ".$row[1]." = ".$row[2]." [added by ".$row[3]."]";	
-	} else {
-		return "'".$note."' was not found, sorry";
-	}
-	
-	return 'FALSE';
-}
 
 ## bot_op
 # Takes two parameters (the hostmask of the user and the heap)
