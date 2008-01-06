@@ -1,6 +1,6 @@
 <div class='main_box'>
   <div class='main_box_head'>
-    <span class='main_head'>About Anna^t</span>
+    <span class='main_head'>About Anna^</span>
   </div>
   <div class='main_box_content'>
   <p>Anna^ was originally created to replace a headless irssi-session with some 
