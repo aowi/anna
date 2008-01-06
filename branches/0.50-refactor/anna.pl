@@ -123,7 +123,8 @@ if (!(-e Anna::Utils->DB_LOCATION)) {
 	my $dbf = Anna::Utils->DB_LOCATION;
 	print "This seems to be the first time you're running Anna^... welcome!\n";
 	unless (-e $ENV{'HOME'}."/.anna") {
-		print "Creating ~/.anna directory to store information... " if ($config->get('verbose'));
+		print "Creating ~/.anna directory to store information... " 
+			if ($config->get('verbose'));
 		mkdir $ENV{'HOME'}."/.anna" or die "\nFailed to create ~/.anna/ directory. $!";
 		print "done!\n" if ($config->get('verbose'));
 	}
@@ -409,7 +410,7 @@ sub parse_message {
 	$cmd =~ s/^(\Q$trigger\E|\Q$botnick\E[ :,-]+\s*)//;
 	
 	# Check for module-bound commands
-	Anna::Module::execute($cmd, $heap->{irc}) 
+	Anna::Module::execute($cmd, $heap, $nick, $host) 
 		or die "Died while executing $cmd. Full msg: $msg";
 
 

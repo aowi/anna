@@ -21,17 +21,17 @@ sub empty_db {
 }
 
 sub execute {
-	return 1 unless (@_ == 2);
-	my ($cmd, $irc) = @_;
+	return 1 unless (@_ == 4);
+	my ($cmd, $heap, $nick, $host) = @_;
 	
 	my $dbh = new Anna::DB;
 	unless ($dbh) {
 		carp "Failed to obtain DB handle: $DBI::errstr";
 		return 1;
 	}
-	
+	my ($c, $m) = split(' ', $cmd, 2);
 	my $sth = $dbh->prepare("SELECT * FROM commands WHERE command = ?");
-	$sth->execute($cmd);
+	$sth->execute($c);
 	my ($module, $sub);
 	if (my $row = $sth->fetchrow_hashref) {
 		$module = $row->{'module_name'};
@@ -42,7 +42,7 @@ sub execute {
 	#load($module) or carp "Loading failed";
 	# XXX turning of strict 'refs'... just pretend you didn't see this
 	no strict 'refs';
-	&$sub($irc);
+	&$sub($m, $heap->{irc}, $nick, $host);
 	use strict 'refs';
 
 	return 1;
