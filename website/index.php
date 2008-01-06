@@ -1,5 +1,5 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html lang='da' xml:lang='da'>
+<html xmlns="http://www.w3.org/1999/xhtml" lang='da' xml:lang='da'>
   <head>
     <meta http-equiv='Content-Type' content='text/html; charset=ISO-8859-15' />
     <title>Anna^ IRC Bot</title>
@@ -18,7 +18,10 @@
 	    <a class='menu' href='./?p=about'>About</a><br />
 	    <a class='menu' href='./?p=development'>Development</a><br />
 	    <a class='menu' href='./?p=documentation'>Documentation</a><br />
-	    <a class='menu' href='./?download'>Download</a><br />
+	    <a class='menu' href='./?p=download'>Download</a><br />
+	    <a class='menu' href='http://trac.frokostgruppen.dk/newticket?component=anna'>
+	      Bugs
+	    </a><br />
 	    <a class='menu' href='http://git.frokostgruppen.dk/?p=anna.git'>
 	      gitweb
 	    </a><br />
@@ -44,7 +47,7 @@
           if (file_exists($_GET['p'].".php")) {
             include_once($_GET['p'].'.php');
           } else {
-            include_once('home.php');
+            include_once('error.php');
           }
         } else {
           include_once('home.php');
@@ -53,10 +56,10 @@
         <!-- End of included content -->
       </div>
       <div id='footer'>
-        <p>&copy; 2006-2007 <a href='mailto:and@vmn.dk'>Anders Ossowicki</a><br />
+        <p>&copy; 2006-2008 <a href='mailto:and@vmn.dk'>Anders Ossowicki</a><br />
 	Anna^ IRC Bot is free software; you can redistribute it and/or modify it 
 	under the terms of the GNU General Public License as published by the 
-	Free Software Foundation; either version 2 of the License.</p>
+	Free Software Foundation; version 2 of the License.</p>
       </div>
     </div>
   </body>
