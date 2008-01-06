@@ -19,6 +19,7 @@
 	    <a class='menu' href='./?p=development'>Development</a><br />
 	    <a class='menu' href='./?p=documentation'>Documentation</a><br />
 	    <a class='menu' href='./?p=download'>Download</a><br />
+	    <a class='menu' href='./?p=contact'>Contact us</a><br />
 	    <a class='menu' href='http://trac.frokostgruppen.dk/newticket?component=anna'>
 	      Bugs
 	    </a><br />
