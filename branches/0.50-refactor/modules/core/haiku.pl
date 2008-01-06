@@ -24,7 +24,7 @@ sub addhaiku {
 ## bot_haiku
 # This returns a haiku
 sub haiku {
-	my $irc = shift;
+	my $irc = $_[1];
 	my (@rows, @haiku);
 	my $query = "SELECT * FROM haiku";
 	my $sth = Anna::DB->new->prepare($query);
