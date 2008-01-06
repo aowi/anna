@@ -21,8 +21,8 @@ sub empty_db {
 }
 
 sub execute {
-	return 1 unless (@_ == 5);
-	my ($cmd, $heap, $channel, $nick, $host) = @_;
+	return 1 unless (@_ == 6);
+	my ($cmd, $heap, $channel, $nick, $host, $type) = @_;
 	
 	my $dbh = new Anna::DB;
 	unless ($dbh) {
@@ -44,7 +44,7 @@ sub execute {
 	# Params are: Message, IRC-object, channel, nick, host
 	no strict 'refs';
 	eval {
-		&$sub($m, $heap->{irc}, $channel, $nick, $host);
+		&$sub($m, $heap->{irc}, $channel, $nick, $host, $type);
 	};
 	print $@."\n" if (defined $@);
 	use strict 'refs';

@@ -270,6 +270,7 @@ sub _start {
 	$heap->{log} = $log;
 	$heap->{irc} = $irc;
 	Anna::Module::load('haiku') or die "Failed loading module haiku";	
+	Anna::Module::load('notes') or die "Failed loading module notes";	
 	# Connect
 	$kernel->yield("connect");
 }
@@ -409,15 +410,22 @@ sub parse_message {
 	my $cmd = $msg;
 	$cmd =~ s/^(\Q$trigger\E|\Q$botnick\E[ :,-]+\s*)//;
 	
+	my $target;
+	if ($type eq 'public') {
+		# Sent to a channel, so this is default return target
+		$target = $c->get('channel');
+	} else {
+		$target = $nick;
+	}
+
 	# Check for module-bound commands
-	Anna::Module::execute($cmd, $heap, $c->get('channel'), $nick, $host) 
-		or die "Died while executing $cmd. Full msg: $msg";
+	Anna::Module::execute($cmd, $heap, $target, $nick, $host, 
+		$type) or die "Died while executing $cmd. Full msg: $msg";
 
 
 	## Bot commands
-	if ($cmd =~ /^mynotes$/) {
-		$out = bot_mynotes($heap, $nick, $type);
-	} elsif ($cmd =~ /^voice(me|)$/) {
+	
+	if ($cmd =~ /^voice(me|)$/) {
 		$out = bot_voice($heap, $from);
 	} elsif ($cmd =~ /^rstats$/) {
 		$out = bot_roulette_stats($heap);
@@ -983,41 +991,6 @@ sub bot_lastseen_newmsg {
 	return;
 }
 
-## bot_mynotes
-# Return all notes belonging to a user
-# Takes one param: username to search for
-sub bot_mynotes {
-	my ($heap, $nick, $type) = @_;
-	return unless ($heap && $nick && $type);
-	
-	my $query = "SELECT word FROM notes WHERE author = ? ORDER BY word ASC";
-	my $sth = Anna::DB->new->prepare($query);
-	$sth->execute($nick);
-	my (@row, @words);
-	my $i = 0;
-	while (@row = $sth->fetchrow()) {
-		$words[$i] = $row[0];
-		$i++;
-	}
-
-	if ((scalar(@words) > 15) && ($type eq 'public')) {
-		# Will not display more than 15 notes in 'public' (channels)
-		my $out = sprintf("%s: Too many notes. Displaying 15 first (message me to see all):", $nick);
-		for (my $j = 0; $j <= 15; $j++) {
-			$out .= " '".$words[$j]."',";
-		}
-		return $out;
-	}
-
-	return sprintf("%s: you haven't taken any notes yet... better get starting soon!", $nick) if (scalar(@words) == 0);
-	
-	my $words;
-	foreach (@words) {
-		$words .= "'$_', "
-	}
-	$words =~ s/(.*), /$1/;
-	return $nick.": your notes: $words";
-}
 
 ## bot_note
 # This manages calc-stuff. Calc is a small system to associate a word or 
