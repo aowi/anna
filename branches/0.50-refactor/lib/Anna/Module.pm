@@ -21,8 +21,8 @@ sub empty_db {
 }
 
 sub execute {
-	return 1 unless (@_ == 4);
-	my ($cmd, $heap, $nick, $host) = @_;
+	return 1 unless (@_ == 5);
+	my ($cmd, $heap, $channel, $nick, $host) = @_;
 	
 	my $dbh = new Anna::DB;
 	unless ($dbh) {
@@ -41,8 +41,12 @@ sub execute {
 	}
 	#load($module) or carp "Loading failed";
 	# XXX turning of strict 'refs'... just pretend you didn't see this
+	# Params are: Message, IRC-object, channel, nick, host
 	no strict 'refs';
-	&$sub($m, $heap->{irc}, $nick, $host);
+	eval {
+		&$sub($m, $heap->{irc}, $channel, $nick, $host);
+	};
+	print $@."\n" if (defined $@);
 	use strict 'refs';
 
 	return 1;

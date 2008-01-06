@@ -410,7 +410,7 @@ sub parse_message {
 	$cmd =~ s/^(\Q$trigger\E|\Q$botnick\E[ :,-]+\s*)//;
 	
 	# Check for module-bound commands
-	Anna::Module::execute($cmd, $heap, $nick, $host) 
+	Anna::Module::execute($cmd, $heap, $c->get('channel'), $nick, $host) 
 		or die "Died while executing $cmd. Full msg: $msg";
 
 
