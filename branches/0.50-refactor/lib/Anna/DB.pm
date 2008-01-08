@@ -13,11 +13,14 @@ use DBI;
 use DBD::SQLite;
 use Carp;
 
-
-## new
-# Params: db file
-# Return a database handle to the file in question. Uses the value from 
-# configuration, if no file specified.
+# sub: new
+# Instance-method that return a plain database-handle
+#
+# Parameters:
+#   class - the callers class
+#
+# Returns:
+#   DB-handle (DBI, DBD::SQLite)
 sub new {
 	my $class = shift;
 	my $file = Anna::Utils->DB_LOCATION;
@@ -36,8 +39,14 @@ sub new {
 	return $dbh;
 }
 
-## sync
-# Syncronize database with script version
+# sub: sync
+# Synchronizes an older version of Anna's database to the current version.
+#
+# Params:
+#   dbh - database-handle, as returned from <new>
+#
+# Returns:
+#   1 (craps out if there are any errors)
 sub sync {
 	my $dbh = shift;
 	unless (defined $dbh) {
@@ -57,7 +66,7 @@ sub sync {
 		$sth = $dbh->prepare($query);
 		$sth->execute();
 		my @row = $sth->fetchrow();
-		return if ($row[1] == Anna::Utils->DB_VERSION);
+		return 1 if ($row[1] == Anna::Utils->DB_VERSION);
 		if ($row[1] eq "1") {
 			# Upgrades from 1->DB_VERSION
 			printf "Upgrading database from version 1 to %s\n", 
@@ -173,6 +182,16 @@ sub sync {
 	}
 }
 
+# sub: DESTROY
+# Disconnects a database-handle when it goes out of scope.
+#
+# Technically unneeded
+#
+# Params:
+#   dbh - database-handle
+#
+# Returns:
+#   1
 sub DESTROY {
 	my $dbh = shift;
 	$dbh->disconnect or carp "Couldn't disconnect from database" ;

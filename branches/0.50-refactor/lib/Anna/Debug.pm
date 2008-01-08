@@ -10,18 +10,29 @@ our @EXPORT = qw(state);
 our @EXPORT_OK = qw(_default bitch);
 use Exporter;
 our @ISA = qw(Exporter);
+use Anna::Config;
 
+# sub: dummy
+# Do I really need to do this?
+sub dummy {}
 
-
-## _default
-# Params: Whatever POE sends our way
-# This is a function called by POE-events, that have no handlers. It should 
-# only be used when debugging is enabled. Prints debug information tp stdout 
-# and returns true
+# sub: _default
+# A catch-all routine for otherwise unhandled events that POE might see.
+#
+# Tries to be smart if it's a numeric irc-event (irc_###). If not, it just dumps
+# all available information.
+#
+# Do not call this function manually
+#
+# Params:
+#   none (POE event call)
+#
+# Returns:
+#   0
 sub _default {
 	my ($event, $args) = @_[ARG0 .. $#_];
 	
-	my $conf = $_[HEAP]->{config};
+	my $conf = new Anna::Config;
 	# _default called before _start had time to populate $heap
 	# we can't know whether user wants debug output.
 	return 0 unless (ref $conf);
@@ -42,3 +53,4 @@ sub _default {
 	print "\nIf you don't want to see this message, please disable debugging\n\n";
 	return 0;
 }
+1;

@@ -4,9 +4,18 @@ use warnings;
 use Anna::DB;
 use Carp;
 
+# var: $current_module
+# Package-global, that holds the name of the module being parsed at the moment.
 my $current_module;
 
-# Removes all added user commands from db
+# sub: empty_db
+# Removes all commands from the command-table. Used at startup to clean up leftover cruft
+#
+# Parameters:
+# 	none
+#
+# Returns:
+# 	1 on success, 0 on failure
 sub empty_db {
 	my $dbh = new Anna::DB;
 	unless ($dbh) {
@@ -20,6 +29,21 @@ sub empty_db {
 	return 1;
 }
 
+# sub: execute
+# Scans the command-table for commands matching the provided message. Executes the corresponding
+# module subroutine if a command is found.
+#
+# Parameters:
+# 	cmd - the full command (including args, excluding trigger)
+# 	heap - ref to POE heap
+# 	channel - the target the message is to be returned to (in case of channels a channel-name,
+# 	in case of privmsgs the user who sent the message)
+# 	nick - the nickname of the sender of the message
+# 	host - senders hostname
+# 	type - type of message. 'public' for messages to channels, 'msg' for private messages
+#
+# Returns:
+# 	1
 sub execute {
 	return 1 unless (@_ == 6);
 	my ($cmd, $heap, $channel, $nick, $host, $type) = @_;
@@ -52,7 +76,15 @@ sub execute {
 	return 1;
 }
 
-# Takes modulename or filename, loads module (evals it)
+# sub: load
+# Takes a module-name or a filename and scans for a module with that name in Anna's 
+# module-directories. If a module is found, it is loaded (read and eval'd)
+#
+# Parameters:
+# 	m - module name or filename
+# 
+# Returns:
+# 	1 on successfull loading, 0 on failure
 sub load {
 	unless (@_ >= 1) {
 		carp "load takes one parameter";
@@ -83,12 +115,20 @@ sub load {
 	eval $code;
 	if ($@) {
 		carp "Failed to load $m: $@";
+		# XXX cleanup possible cruft from database
 		return 0;
 	}
 	return 1;
 }
 
-# Takes modulename, removes traces of it
+# sub: unload
+# Unloads a module (for now, just deletes the commands associated with that module-name
+#
+# Parameters:
+# 	m - name of module
+#
+# Returns:
+# 	1 on success, 0 on failure
 sub unload {
 	unless (@_ >= 1) {
 		carp "unload takes one parameter";

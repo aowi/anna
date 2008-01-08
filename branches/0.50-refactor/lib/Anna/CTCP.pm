@@ -12,9 +12,18 @@ use Anna::Output qw(irclog);
 use Anna::Utils;
 use POE;
 
-## on_ctcp_ping
-# This gets called whenever you get /ctcp ping'd. Should return a nice
-# response to the pinger
+# sub: on_ctcp_ping
+# Event callback called by POE when a CTCP PING is recieved.
+#
+# Responds to the sender with a PING-reply
+#
+# Do not call this manually
+#
+# Params:
+#   none (POE event call)
+#
+# Returns:
+#   1
 sub on_ctcp_ping {
 	my ($from, $to, $msg, $h) = @_[ARG0, ARG1, ARG2, HEAP];
 	my ($nick, $host) = split(/!/, $from);
@@ -31,10 +40,19 @@ sub on_ctcp_ping {
 		print_time(), $nick if $h->{config}->get('verbose');
 }
 
-## on_ctcpreply_ping
-# Subroutine for handling ping replies. Just gives the lag results for
-# outgoing pings.
-# FIXME: Use microseconds instead
+# sub: on_ctcpreply_ping
+# Event callback called by POE when a CTCP PING reply is recieved.
+#
+# If a timestampt is supplied, we assume that we sent it along with a CTCP PING
+# and calculate the difference between current time and the timestamp
+#
+# Do not call this manually
+#
+# Params:
+#   none (POE event call)
+#
+# Returns:
+#   1
 sub on_ctcpreply_ping {
 	my ($from, $to, $msg, $h) = @_[ARG0, ARG1, ARG2, HEAP];
 	my ($nick, $host) = split(/!/, $from);
@@ -45,7 +63,7 @@ sub on_ctcpreply_ping {
 		irclog('status' => sprintf "-!- Recieved invalid CTCP PING REPLY from %s", $nick);
 		printf "[%s] ".colour("-", "94")."!".colour("-", "94")." Recieved invalid CTCP PING REPLY from %s\n",
 			print_time(), $nick unless $h->{config}->get('silent');
-		return;
+		return 1;
 	}
 
 	my $diff = time - $msg;
@@ -54,9 +72,20 @@ sub on_ctcpreply_ping {
 		print_time(), $nick, $diff unless $h->{config}->get('silent');
 }
 
-## on_ctcp_version
-# This subroutine reacts to the /ctcp version, returning the current 
-# version of this script
+# sub: on_ctcp_version
+# Event callback called by POE when a CTCP VERSION is recieved.
+#
+# Responds to the sender with version information
+# <Anna::Utils::SCRIPT_NAME>, <Anna::Utils::SCRIPT_VERSION> & 
+# <Anna::Utils::SCRIPT_SYSTEM>
+#
+# Do not call this manually
+#
+# Params:
+#   none (POE event call)
+#
+# Returns:
+#   1
 sub on_ctcp_version {
 	my ($from, $to, $msg, $h) = @_[ARG0, ARG1, ARG2, HEAP];
 	my ($nick, $host) = split(/!/, $from);
@@ -69,8 +98,18 @@ sub on_ctcp_version {
 		print_time(), $nick if $h->{config}->get('verbose');
 }
 
-## on_ctcpreply_version
-# This subroutine prints out version replies to stdout
+# sub: on_ctcpreply_version
+# Event callback called by POE when a CTCP VERSION reply is recieved.
+#
+# Prints the version information and hums along.
+#
+# Do not call this manually
+#
+# Params:
+#   none (POE event call)
+#
+# Returns:
+#   1
 sub on_ctcpreply_version {
 	my ($from, $to, $msg, $h) = @_[ARG0, ARG1, ARG2, HEAP];
 	my ($nick) = split(/!/, $from);
@@ -82,7 +121,7 @@ sub on_ctcpreply_version {
 		printf "[%s] %s!%s Recieved invalid CTCP VERSION REPLY from %s\n", 
 			print_time(), colour('-', '94'), colour('-', '94'), 
 			$nick unless $h->{config}->get('silent');
-		return;
+		return 1;
 	}
 
 	irclog('status' => sprintf "-!- CTCP VERSION REPLY from %s: %s", $nick, $msg);
@@ -90,8 +129,19 @@ sub on_ctcpreply_version {
 		print_time(), $nick, $msg unless $h->{config}->get('silent');
 }
 
-## on_ctcp_time
-# This returns the local system time, to whoever sent you a CTCP TIME
+# sub: on_ctcp_time
+# Event callback called by POE when a CTCP TIME is recieved.
+#
+# Sends a CTCP response with the current system time. RFC permits arbitrary 
+# formats so we use scalar localtime time
+#
+# Do not call this manually
+#
+# Params:
+#   none (POE event call)
+#
+# Returns:
+#   1
 sub on_ctcp_time {
 	my ($from, $h) = @_[ARG0, HEAP];
 	my ($nick) = split(/!/, $from);
@@ -105,9 +155,19 @@ sub on_ctcp_time {
 		print_time(), $nick if $h->{config}->get('verbose');
 }
 
-## on_ctcp_finger
-# I can't remember what this i supposed to return, so give a rude 
-# response
+# sub: on_ctcp_finger
+# Technically supposed to be a finger-implementation but that's boring, so 
+# respond with a rude remark instead.
+#
+# Event callback called by POE when a CTCP FINGER is recieved.
+#
+# Do not call this manually
+#
+# Params:
+#   none (POE event call)
+#
+# Returns:
+#   1
 sub on_ctcp_finger {
 	my ($from, $h) = @_[ARG0, HEAP];
 	my ($nick) = split(/!/, $from);

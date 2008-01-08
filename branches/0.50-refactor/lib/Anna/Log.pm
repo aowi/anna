@@ -13,12 +13,41 @@ our @ISA = qw(Exporter);
 use Carp;
 use Anna::Utils;
 
-## new
-# Takes a couple of configurations as params. Returns a log-object
+# sub: new
+# Returns an instance of Anna::Log, which allows for logging to that specific 
+# location.
+# new Anna::Log must be called with named parameters like this
+#
+# (start code)
+# new Anna::Log(
+# 	heap 	=> $heap,
+# 	format 	=> 'msg', 
+# 	network	=> $network,
+# 	target 	=> $channel
+# );
+# (end)
+# or like this (if you're logging a service)
+# (start code)
+# new Anna::Log(
+# 	heap	=> $heap,
+# 	format	=> 'service',
+# 	name	=> 'foobarmodule'
+# );
+# (end)
+#
+# Parameters:
+#   heap - a POE heap-reference
+#   format - type of log (either service or msg)
+#   network - the name of the network we're connected to
+#   target - the target from which we log (channel, user, etc).
+#   name - the name of the service to log
+#
+# Returns:
+#   a blessed reference to a log-instance
 sub new {
 	my $class = shift;
 	croak "$class requires an even number of parameters" if @_ & 1;
-
+	
 	# Get parameters from caller
 	my %params = @_;
 	$params{ lc($_) } = delete $params{$_} foreach (keys %params);
@@ -52,9 +81,16 @@ sub new {
 	return bless $log, $class;
 }
 
-## write
-# Takes one param, the message to write to a logfile.
-# Writes the message and returns 1 on succes, 0 on failure
+# sub: write
+# An instance-method that operates on log-instances. Writes the given message to
+# the logfile your object points to (be it a service or target)
+#
+# Parameters:
+# 	message - the message to write
+#
+# Returns:
+# 	1 on success and 0 on failure (note, if logging is disabled alltogether, 
+# 	it will still return 1)
 sub write {
 	my ($self, $message) = @_;
 	unless (defined $message) {
@@ -93,4 +129,4 @@ sub write {
 	return 1;
 }
 
-
+1;

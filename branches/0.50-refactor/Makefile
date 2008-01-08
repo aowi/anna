@@ -11,3 +11,9 @@ install:
 
 dev-modules:
 	cp -r modules /home/arkanoid/.anna/
+
+zomgdocs:
+	/usr/bin/NaturalDocs -i . -o html docs/ -p docs/nd/ -xi modules/ -do 
+
+docs:
+	/usr/bin/NaturalDocs -i . -o html docs/ -p docs/nd/ -xi modules/ -do 

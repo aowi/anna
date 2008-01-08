@@ -12,6 +12,30 @@ use Carp;
 
 ## Script constant
 # Miscallaneus constants that are available to the main script
+# Constant: STARTTIME
+# Epoch timestamp the bot was started
+#
+# Constant: SCRIPT_NAME
+# Name of the script/bot
+#
+# Constant: SCRIPT_VERSION
+# The current version of the bot. -svn, -git or -scm tagged on to the end means unreleased code
+#
+# Constant: SCRIPT_SYSTEM
+# The system the bot runs on (just the output of uname -sr)
+#
+# Constant: SCRIPT_AUTHOR
+# Name of the script-author
+#
+# Constant: SCRIPT_EMAIL
+# Authors email
+#
+# Constant: DB_LOCATION
+# Location of the anna sqlite database
+#
+# Constant: DB_VERSION
+# The DB layout version this script supports.
+
 use constant STARTTIME          => time;
 use constant SCRIPT_NAME        => "Anna^ IRC Bot";
 use constant SCRIPT_VERSION     => "0.40-svn";
@@ -22,9 +46,16 @@ use constant SCRIPT_EMAIL	=> 'and@vmn.dk';
 use constant DB_LOCATION	=> "$ENV{'HOME'}/.anna/anna.db";
 use constant DB_VERSION         => 2;
 
-## version
-# Params: N/A
-# Prints version information and exits
+# sub: version
+# Prints version information to stdout
+# 
+# If called with an exit signal as parameter, it will call exit() at the end
+#
+# Parameters: 
+# 	exit signal
+#
+# Returns:
+# 	1 or exits
 sub version {
 	printf "%s version %s, Copyright (C) 2006-2007 %s\n", 
 		SCRIPT_NAME, SCRIPT_VERSION, SCRIPT_AUTHOR;
@@ -32,11 +63,17 @@ sub version {
 		SCRIPT_NAME;
 	printf "This is free software, and you are welcome to redistribute it under certain conditions\n";
 	exit($_[0]) if defined $_[0] && $_[0] =~ /^\d+$/;
+	return 1;
 }
 
-## usage
-# Params: exit value
-# Prints usage information and exits with the given value
+# sub: usage
+# Prints usage information and quits
+#
+# Parameters: 
+# 	exit value
+#
+# Returns:
+# 	N/A (exits Anna^)
 sub usage {
 	my $exit = shift;
 	$exit ||= 0;
@@ -74,9 +111,14 @@ EOUSAGE
 	exit($exit);
 }
 
-## error
-# Params: error-string, conf-object
-# Returns the colour-coded error message
+# sub: error
+# Colorifies an error-message
+#
+# Parameters: 
+# 	errmsg - the error message
+#
+# Returns:
+# 	the colour-coded error message or undef on error
 sub error {
 	my $errmsg = shift;
 	unless (defined $errmsg) {
@@ -88,9 +130,14 @@ sub error {
 	return colour($errmsg, "91");
 }
 
-## warning
-# Params: warning-string, conf-object
-# Returns the colour-coded warning
+# sub: warning
+# Colorifies a warning
+#
+# Parameters: 
+# 	warnmsg - the warning message
+#
+# Returns: 
+# 	the colour-coded warning or undef on error
 sub warning {
 	my $warnmsg = shift;
 	unless (defined $warnmsg) {
@@ -100,9 +147,15 @@ sub warning {
 	return colour($warnmsg, '93');
 }
 
-## colour
-# Params: string, colour-code, conf-object
-# Returns the colourcoded string, if appropriate
+# sub: colour
+# Colorifies a string
+#
+# Parameters: 
+# 	s - the message to colour
+# 	c - the colour-code
+# 
+# Returns: 
+# 	the colourcoded string or undef on error
 sub colour {
 	my ($s, $c) = @_;
 	unless (defined $s && defined $c) {
@@ -116,9 +169,14 @@ sub colour {
 	return $s;
 }
 
-## trim
-# Params: string
-# Returns new string without whitespace at beginning or end
+# sub: trim
+# Trims whitespace off the start and end of a string
+#
+# Parameters: 
+# 	s - the string to trim
+#
+# Returns:
+# 	the trimmed string or undef on error
 sub trim {
         my $s = shift;
 	unless (defined $s) {
@@ -130,9 +188,14 @@ sub trim {
         return $s;
 }
 
-## rtrim
-# Params: string
-# Returns new string without trailing whitespace
+# sub: rtrim
+# Trims whitespace off the end of a string
+#
+# Parameters: 
+# 	s - the string to be trimmed
+#
+# Returns:
+# 	the trimmed string or undef on error
 sub rtrim {
 	my $s = shift;
 	unless (defined $s) {
@@ -143,9 +206,14 @@ sub rtrim {
 	return $s;
 }
 
-## ltrim
-# Params: string
-# Returns new string without leading whitespace
+# sub: ltrim
+# Trims whitespace from the beginning of a string
+#
+# Parameters: 
+# 	s - the string to trim
+#
+# Returns:
+# 	trimmed string or undef on error
 sub ltrim {
 	my $s = shift;
 	unless (defined $s) {
@@ -156,11 +224,17 @@ sub ltrim {
 	return $s;
 }
 
-# calc_diff
-# Params: epoch timestamp
-# Returns formatted difference between param and current time
+# sub: calc_diff
+# Calculates the difference between now and a timestamp, and returns a nicely formatted output
+#
+# Parameters: 
+# 	when - epoch timestamp
+#
+# Returns:
+# 	"days d hours h minutes m seconds s" since $when
 sub calc_diff {
 	my $when = shift;
+	$when ||= 0;
 	my $diff = (time() - $when);
 	my $day = int($diff / 86400); $diff -= ($day * 86400);
 	my $hrs = int($diff / 3600); $diff -= ($hrs * 3600);
@@ -169,9 +243,15 @@ sub calc_diff {
 	return sprintf "%dd %dh %dm %ds", $day, $hrs, $min, $sec;
 }
 
-# print_time
-# Params: N/A
-# Returns current time, nicely formatted for log/screen output
+# sub: print_time
+# Formats the current time for displaying purposes (command line, in IRC, etc)
+#
+# Parameters: 
+# 	none
+#
+# Returns:
+# 	hour:min:sec
+
 # TODO: Make it configurable
 sub print_time {
 	my ($sec,$min,$hour,$mday,$mon,$year, $wday,$yday,$isdst) = localtime time;

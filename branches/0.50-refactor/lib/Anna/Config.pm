@@ -12,9 +12,14 @@ use Data::Dumper;
 use Anna::Utils;
 use Anna::DB;
 
-## new
-# Params: configuration options
-# Return a blessed reference to a configuration hash based on the SQLite table
+# Func: new
+# Generate a new configuration-object
+#
+# Parameters: 
+#   none
+#
+# Returns:
+#   A blessed reference to a hash (that is, a config-object)
 sub new {
 	my $class = shift;
 	croak "$class requires an even number of parameters" if @_ & 1;
@@ -66,15 +71,34 @@ sub new {
 	return bless $conf, $class;
 }
 
+# Func: empty_db
+# Empty the configuration database. This should only be run on startup, to clean cruft.
+#
+# Parameters: 
+#   none
+#
+# Returns: 
+#   1 on success, 0 on failure
 sub empty_db {
 	my $dbh = new Anna::DB;
 	unless ($dbh) {
 		carp "Couldn't get database-handle: $DBI::errstr";
-		return undef;
+		return 0;
 	}
 	$dbh->do("DELETE FROM config");
+	return 1;
 }
 
+# Func: exists
+# Checks if a configuration key have been set (exists in the configuration table)
+# 
+# Must be called through a config-object.
+#
+# Parameters:
+#   k - the key to search for
+#
+# Returns:
+#   1 if the key exists, 0 if it doesn't
 sub exists {
 	my (undef, $k) = @_;
 	unless (defined $k) {
@@ -84,7 +108,17 @@ sub exists {
 	return key_exists_in_db($k);
 }
 
-# Only for internal use
+# Func: key_exists_in_db
+# Private pendant to <exists>. Does the real checking but can't be called from a 
+# config-object. 
+#
+# Only used internally.
+#
+# Parameters:
+#   k - the key to search for 
+#
+# Returns:
+#   1 if the key exists, 0 otherwise
 sub key_exists_in_db {
 	my $k = shift;
 	my $dbh = new Anna::DB;
@@ -97,6 +131,17 @@ sub key_exists_in_db {
 	$sth->fetchrow ? return 1 : return 0;
 }
 
+# sub: update_db
+# Updates database with changes configuration values. Only used internally.
+# 
+# Use <set> for normal operation
+#
+# Parameters:
+#   k - the key to update
+#   v - the new value for the key
+#
+# Returns:
+#   >1 on success, undef on errors (along with a carp'd errmsg)
 sub update_db {
 	my ($k, $v) = @_;
 	unless (defined $k && defined $v) {
@@ -116,9 +161,16 @@ sub update_db {
 	$dbh->do($query, undef, ($v, $k)) or croak $DBI::errstr;
 }
 
-## parse_configfile
-# Params: path to configfile
-# Return a reference to an object, holding the configuration details.
+# sub: parse_configfile
+# Parses a configuration file and updates config-table with new keys and values.
+# 
+# Called from a config-object only!
+#
+# Parameters:
+#   cfile - path to the configuration file (absolute, please)
+#
+# Returns: 
+#   the updated config-object  
 sub parse_configfile {
 	my ($self, $cfile) = @_;
 	unless (defined $cfile) {
@@ -168,10 +220,17 @@ sub parse_configfile {
 	return $self;
 }
 
-## set
-# Params: key, value
-# Sets a given key to a given value.
-# Returns the value
+# sub: set
+# Sets a given key to a given value
+# 
+# Must be called from a config-object
+#
+# Parameters:
+#   k - the key to set/update
+#   v - the new value of the key
+#
+# Returns:
+#   undef on failure, 1 on success
 sub set {
 	my $self = shift;
 	my ($k, $v) = @_;
@@ -182,11 +241,19 @@ sub set {
 
 	update_db($k, $v);
 	$self->{$k} = $v;
+	return 1;
 }
 
-## get
-# Params: key
-# Returns the current value for the given key, undef if key wasn't found
+# sub: get
+# Get the value of a key.
+# 
+# Must be called from a config-object
+#
+# Parameters:
+#   k - the key whose value you want
+#
+# Returns:
+#   undef on failure, the value on success
 sub get {
 	my ($self, $k) = @_;
 
@@ -199,21 +266,25 @@ sub get {
 	undef;
 }
 
-## toggle
-# Params: key
-# Toggles the value of the given key (to false of true, and otherwise)
-# Be careful as this could potentially lead to loss of information, if a string
-# or like is 'toggled'. We will print a warning unless 
-# Returns true if key was toggled, false if it couldn't be.
+# sub: toggle
+# Toggles a boolean value (set it to zero if it's one and vice-versa)
+# 
+# Must be called from a config-object
+#
+# Parameters:
+#   k - the key which must point to a boolean value
+#
+# Returns:
+#   1 on success, 0 on failure
 sub toggle {
 	my ($self, $k) = @_;
 	
 	unless (defined $k) {
 		carp "toggle requires one parameter";
-		return undef;
+		return 0;
 	}
 
-	if (defined $self->get($k) && length($self->get($k)) > 1) {
+	if (defined $self->get($k) && $self->get($k) != 1 && $self->get($k) != 0) {
 		carp "tried to toggle non-boolean key $k (value: ".$self->get($k).")";
 		return 0;
 	}
@@ -223,16 +294,24 @@ sub toggle {
 	return 1;
 }
 
-## sub delete
-# Params: key
-# Calls delete on the key, if it's defined
-# Returns the deleted value if key was found, false otherwise.
+# sub: delete
+# Deletes a key from object and database, if it exists.
+# 
+# Keep in mind, that other config-objects floating around might still have the key/value.
+# 
+# Must be called from a config-object
+#
+# Parameters:
+#   k - the key to delete
+#
+# Returns:
+#   0 on failure, the old (now deleted) value of the key on success
 sub delete {
 	my ($self, $k) = @_;
 	
 	unless (defined $k) {
 		carp "delete requires one parameter";
-		return undef;
+		return 0;
 	}
 	
 	unless (defined $self->get($k)) {

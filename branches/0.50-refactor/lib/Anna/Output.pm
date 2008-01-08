@@ -8,13 +8,16 @@ our @ISA = qw(Exporter);
 
 use Anna::Utils;
 
-## irclog
-# Manages logging. Takes two params, the level of what is being logged and the
-# actual message to log. Two level are possible, #channel and 'status'.
-# #channel is for everything said in channel and status is for everything
-# printed in the status window.
+# sub: irclog
+# DEPRECATED! DON'T USE
+#
+# Parameters:
+# 	N/A
+#
+# Returns:
+# 	undef
 sub irclog {
-	return;
+	return undef;
 	croak("irclog requires three parameters") unless (@_ == 3);
 	my ($target, $msg, $conf) = @_;
 	

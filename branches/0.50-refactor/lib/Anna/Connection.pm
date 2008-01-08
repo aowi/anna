@@ -14,11 +14,23 @@ use Data::Dumper;
 use Anna::Utils;
 use Anna::Config;
 
+# var: $std_croak
+# stardard error-message used when do-routines are called manually
 my $std_croak = "Do not call do_*-routines manually. These are for internal use only!";
 
-## do_autoping
-# checks if we've seen any traffic for the pas 300 secs, generates some in case
-# we haven't.
+# sub: do_autoping
+# Called by the POE-kernel when there has been no traffic for 300 seconds.
+#
+# Sends a message to the IRC-server to verify that we are, in fact, still 
+# connected.
+#
+# Do not call this function manually
+#
+# Params:
+#   none (POE event call)
+#
+# Returns:
+#   1
 sub do_autoping() {
 	my ($kernel, $heap) = @_[KERNEL, HEAP];
 	croak $std_croak unless (defined $kernel && defined $heap);
@@ -28,8 +40,17 @@ sub do_autoping() {
 	return 1;
 }
 
-## do_connect
-# Tell the irc-object to initiate the connection 
+# sub: do_connect
+# Initiates a connection to the IRC-server through the previously defined 
+# IRC-object
+#
+# Do not call this function manually
+#
+# Params:
+#   none (POE event call)
+#
+# Returns:
+#   1
 sub do_connect() {
 	croak $std_croak unless defined $_[HEAP];
 	my $c = new Anna::Config;
@@ -40,9 +61,18 @@ sub do_connect() {
 	return 1;
 }
 
-## do_reconnect
-# POE calls this when the connection died and needs to be reestablished.
-# Wait for 60 secs, then attempt a connect.
+# sub: do_reconnect
+# Called when a connection is dropped and needs to be re-established. 
+#
+# Sleeps for 60 seconds before calling $kernel->connect.
+#
+# Do not call this function manually
+#
+# Params:
+#   none (POE event call)
+#
+# Returns:
+#   1
 sub do_reconnect() {
 	croak $std_croak unless defined $_[KERNEL];
 	my $kernel = $_[KERNEL];

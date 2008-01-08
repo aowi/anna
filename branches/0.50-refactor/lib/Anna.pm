@@ -10,7 +10,19 @@ our @ISA = qw(Exporter);
 use Anna::DB;
 use Carp;
 
-# Takes command and func to be run when command is encountered
+# Function: command_bind
+# 
+# Binds a command from IRC to a subroutine in a module
+#
+# Parameters:
+# 
+#   mod - name of the module that calls
+#   cmd - the command that should be bound
+#   sub - the subroutine to bind to
+#
+# Returns:
+#
+#   0 upon success, 1 upon failure (error message is carp'd)
 sub command_bind {
 	unless (@_ == 3) {
 		carp "command_bind needs three parameters. Got @_";
@@ -35,7 +47,14 @@ sub command_bind {
 	return 1;
 }
 
-# Takes a command-name. Returns true if command exists in DB
+# Func: cmd_exists_in_db
+# Checks if a command already exists in the table of commands
+#
+# Parameters:
+#    cmd - command to scan for
+#
+# Returns:
+#    0 if the command doesn't exists, 1 if it's there
 sub cmd_exists_in_db {
 	unless (@_ >= 1) {
 		carp "cmd_exists_in_db takes one parameter";
