@@ -64,7 +64,7 @@ sub execute {
 		return 1;
 	}
 	#load($module) or carp "Loading failed";
-	# XXX turning of strict 'refs'... just pretend you didn't see this
+	# XXX turning off strict 'refs'... just pretend you didn't see this
 	# Params are: Message, IRC-object, channel, nick, host
 	no strict 'refs';
 	eval {
