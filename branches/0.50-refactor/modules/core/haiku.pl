@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Anna;
+use Anna::Module;
 use Anna::DB;
 
 # Params are message, IRC-object, channel, nick, host
@@ -44,6 +44,7 @@ sub haiku {
 	$irc->yield(privmsg => $channel => $_) for @h;
 }
 
+my $mod = Anna::Module->new("haiku");
 # Module name, command, sub
-command_bind("haiku", "haiku", "haiku");
-command_bind("haiku", "addhaiku", "addhaiku");
+$mod->registercmd("haiku", "haiku")->registercmd("addhaiku", "addhaiku");
+1;

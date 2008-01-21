@@ -8,6 +8,52 @@ use Carp;
 # Package-global, that holds the name of the module being parsed at the moment.
 my $current_module;
 
+# sub: new
+# Create new instance of Anna::Module. Modules can use this to register for 
+# events/commands and much more.
+#
+# Parameters:
+# 	name - module name
+#
+# Returns:
+# 	Anna::Module-object, zero on failure
+sub new {
+#	return 0 unless (@_ == 1);
+	my ($class, $name) = @_;
+	if (module_loaded($name)) {
+		carp "Module $name already loaded";
+		return 0;
+	}
+	my $module = {name => $name};
+	return bless $module, $class;
+}
+
+# sub: module_loaded
+# Checks if a module with the supplied name has already been loaded
+#
+# Parameters:
+# 	name - module name
+#
+# Returns:
+# 	1 if module is loaded
+# 	0 if module isn't loaded
+# 	1 if called as a method
+sub module_loaded {
+	return undef unless (@_ == 1);
+	my $n = shift;
+	if (ref $n) {
+		# Called as method
+		return 1;
+	} else {
+		my $dbh = new Anna::DB or return undef;
+		my $sth = $dbh->prepare("SELECT * FROM modules WHERE name = ? LIMIT 1");
+		$sth->execute($n);
+		return 1 if ($sth->fetchrow);
+	}
+	return 0;
+}
+
+
 # sub: empty_db
 # Removes all commands from the command-table. Used at startup to clean up leftover cruft
 #
@@ -17,16 +63,83 @@ my $current_module;
 # Returns:
 # 	1 on success, 0 on failure
 sub empty_db {
+	if (@_ && ref $_[0]) {
+		# Called as method, abort
+		carp "Don't call empty_db as a method!!";
+		return 0;
+	}
 	my $dbh = new Anna::DB;
 	unless ($dbh) {
 		carp "Failed to obtain DB handle: $DBI::errstr";
 		return 0;
 	}
-	unless (defined $dbh->do("DELETE FROM commands")) {
-		carp "Failed to delete all commands: $DBI::errstr";
+	unless (defined $dbh->do("DELETE FROM modules")) {
+		carp "Failed to empty module database: $DBI::errstr";
 		return 0;
 	}
 	return 1;
+}
+
+# Func: cmd_exists_in_db
+# Checks if a command already exists in the modules-table
+#
+# Parameters:
+#    cmd - command to scan for
+#
+# Returns:
+#    0 if the command doesn't exists, 1 if it's there
+sub cmd_exists_in_db {
+	unless (@_ >= 1) {
+		carp "cmd_exists_in_db takes one parameter";
+		return 0;
+	}
+	my $cmd = shift;
+	if (ref $cmd) {
+		my $pkg = $cmd;
+		$cmd = shift;
+	}
+	my $dbh = new Anna::DB;
+	unless ($dbh) {
+		carp "Couldn't get database-handle: $DBI::errstr";
+		return 0;
+	}
+	my $sth = $dbh->prepare("SELECT value FROM modules WHERE type = 'command' AND value = ?");
+	$sth->execute($cmd);
+	$sth->fetchrow ? return 1 : return 0;
+}
+
+
+# sub: registercmd
+# Used as a method to register a command
+#
+# Parameters:
+# 	cmd - the cmd to listen for
+# 	sub - the sub to call when cmd is found
+#
+# Returns:
+# 	The object (caller)
+sub registercmd {
+	unless (@_ == 3) {
+		carp "registercmd takes two parameters: command and sub";
+		return $_[0];
+	}
+	my $pkg = shift;
+	my ($cmd, $sub) = @_;
+	my $mod = $pkg->{'name'};
+	if (cmd_exists_in_db($cmd)) {
+		carp "Failed to register cmd $cmd: Already existing";
+		return $pkg;
+	}
+	my $dbh = new Anna::DB or return $pkg;
+	my $rv = $dbh->do(
+		"INSERT INTO modules (name, type, value, sub) 
+		VALUES (?, 'command', ?, ?)", 
+		undef, ($mod, $cmd, $sub));
+	unless (defined $rv) {
+		carp "Failed to add command $cmd to DB: $DBI::errstr";
+		return $pkg;
+	}
+	return $pkg;
 }
 
 # sub: execute
@@ -54,11 +167,11 @@ sub execute {
 		return 1;
 	}
 	my ($c, $m) = split(' ', $cmd, 2);
-	my $sth = $dbh->prepare("SELECT * FROM commands WHERE command = ?");
+	my $sth = $dbh->prepare("SELECT * FROM modules WHERE type = 'command' AND value = ?");
 	$sth->execute($c);
 	my ($module, $sub);
 	if (my $row = $sth->fetchrow_hashref) {
-		$module = $row->{'module_name'};
+		$module = $row->{'name'};
 		$sub = $row->{'sub'};
 	} else {
 		return 1;
@@ -140,7 +253,7 @@ sub unload {
 		carp "Unable to obtain DB handle: $DBI::errstr";
 		return 0;
 	}
-	unless (defined $dbh->do("DELETE FROM commands WHERE module_name = ?", undef, ($m))) {
+	unless (defined $dbh->do("DELETE FROM modules WHERE name = ?", undef, ($m))) {
 		carp "Failed to unload module $m: $DBI::errstr";
 		return 0;
 	}
