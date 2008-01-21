@@ -4,9 +4,9 @@ use warnings;
 use Anna::DB;
 use Carp;
 
-# var: $current_module
-# Package-global, that holds the name of the module being parsed at the moment.
-my $current_module;
+# var: %modules
+# Package-global, that holds the name of all modules with registered events.
+our %modules;
 
 # sub: new
 # Create new instance of Anna::Module. Modules can use this to register for 
@@ -25,6 +25,8 @@ sub new {
 		return 0;
 	}
 	my $module = {name => $name};
+	my $r = bless $module, $class;
+	$modules{$name} = $r;
 	return bless $module, $class;
 }
 
@@ -169,19 +171,19 @@ sub execute {
 	my ($c, $m) = split(' ', $cmd, 2);
 	my $sth = $dbh->prepare("SELECT * FROM modules WHERE type = 'command' AND value = ?");
 	$sth->execute($c);
-	my ($module, $sub);
+	my ($name, $sub);
 	if (my $row = $sth->fetchrow_hashref) {
-		$module = $row->{'name'};
+		$name = $row->{'name'};
 		$sub = $row->{'sub'};
 	} else {
 		return 1;
 	}
-	#load($module) or carp "Loading failed";
+	
 	# XXX turning off strict 'refs'... just pretend you didn't see this
 	# Params are: Message, IRC-object, channel, nick, host
 	no strict 'refs';
 	eval {
-		&$sub($m, $heap->{irc}, $channel, $nick, $host, $type);
+		&$sub($m, $heap->{irc}, $channel, $nick, $host, $type, $modules{$name});
 	};
 	print $@."\n" if (defined $@);
 	use strict 'refs';
@@ -204,10 +206,6 @@ sub load {
 		return 0;
 	}
 	my $m = shift;
-	$current_module =  $m;
-	if ($m =~ /\.pl$/) {
-		$current_module =~ s/.*\/(.*)\.pl$/$1/;
-	}
 
 	my $code;
 	my @path = ("/.anna/modules/", "/.anna/modules/core/", "/.anna/modules/auto/");
