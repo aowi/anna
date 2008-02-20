@@ -32,3 +32,7 @@ sub foo {
   doing funky stuff when loaded, issuing 'die' at weird times and so on).
 
 * Move existing stuff into modules
+
+Misc
+----
+Improve nickserv support to allow custom commands or something like that.

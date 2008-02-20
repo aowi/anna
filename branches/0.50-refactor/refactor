@@ -114,13 +114,26 @@ $heap
 	
 Modules
 =======
-Each module reside in a separate namespace under Anna::Module (e.g. Anna::Module::haiku).
-On load, the module is eval'd in that particular namespace. Here, it can hook up to various commands via
-the Anna::command_bind function, match regexps via Anna::regexp_bind and more. When an appropriate command
-is found, Anna^ will call the Anna::Module::module_name::sub that's associated with the specific command
-On unload, the namespace Anna::Module::module_name is destroyed (is this possible?)
+Each module reside in a separate namespace under Anna::Module (e.g. 
+Anna::Module::haiku). On load, the module is eval'd in that particular namespace. 
+Here, it can hook up to various commands via the Anna::command_bind function, match 
+regexps via Anna::regexp_bind and more. When an appropriate command is found, Anna^ 
+will call the Anna::Module::module_name::sub that's associated with the specific 
+command. On unload, the namespace Anna::Module::module_name is destroyed (is this 
+possible?) [I think not, but we might be able to override it with an empty enviroment]
+
+Possible to handle commands with POE-events using postback and callback 
+instead? Might make module-loading a whole lot easier.
 
 Git-stuff
 ========
 git-clone git://frokostgruppen.dk/var/git/anna.git
 git-commit, git-push and so on
+
+Multiple networks
+Each network is assigned a session. Default session
+handlers will handle events for single sessions.
+This means it's not directly possible (or rather, 
+somewhat messy) to access stack-information for 
+another network. As of this time, it seems like a 
+reasonable constraint.
