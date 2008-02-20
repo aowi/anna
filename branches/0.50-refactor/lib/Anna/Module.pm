@@ -5,8 +5,8 @@ use Anna::DB;
 use Carp;
 
 # var: %modules
-# Package-global, that holds the name of all modules with registered events.
-our %modules;
+# Semiprotected global, that holds the name of all modules with registered events.
+my %modules;
 
 # sub: new
 # Create new instance of Anna::Module. Modules can use this to register for 
@@ -18,7 +18,6 @@ our %modules;
 # Returns:
 # 	Anna::Module-object, zero on failure
 sub new {
-#	return 0 unless (@_ == 1);
 	my ($class, $name) = @_;
 	if (module_loaded($name)) {
 		carp "Module $name already loaded";
@@ -27,7 +26,7 @@ sub new {
 	my $module = {name => $name};
 	my $r = bless $module, $class;
 	$modules{$name} = $r;
-	return bless $module, $class;
+	return $r;
 }
 
 # sub: module_loaded
@@ -47,10 +46,11 @@ sub module_loaded {
 		# Called as method
 		return 1;
 	} else {
-		my $dbh = new Anna::DB or return undef;
-		my $sth = $dbh->prepare("SELECT * FROM modules WHERE name = ? LIMIT 1");
-		$sth->execute($n);
-		return 1 if ($sth->fetchrow);
+#		my $dbh = new Anna::DB or return undef;
+#		my $sth = $dbh->prepare("SELECT * FROM modules WHERE name = ? LIMIT 1");
+#		$sth->execute($n);
+#		return 1 if ($sth->fetchrow);
+		return 1 if (exists $modules{$n});
 	}
 	return 0;
 }
@@ -179,14 +179,16 @@ sub execute {
 		return 1;
 	}
 	
+	# XXX Why do I need this for $modules{$name} to NOT return undef in eval?
+	%modules;
+
 	# XXX turning off strict 'refs'... just pretend you didn't see this
 	# Params are: Message, IRC-object, channel, nick, host
-	no strict 'refs';
-	eval {
-		&$sub($m, $heap->{irc}, $channel, $nick, $host, $type, $modules{$name});
-	};
+#	no strict 'refs';
+	my $s = \&{ "Anna::Module::".$name."::".$sub };
+	eval '$s->($m, $heap->{irc}, $channel, $nick, $host, $type, $modules{$name})';
 	print $@."\n" if (defined $@);
-	use strict 'refs';
+#	use strict 'refs';
 
 	return 1;
 }
@@ -206,7 +208,10 @@ sub load {
 		return 0;
 	}
 	my $m = shift;
-
+	if (module_loaded($m)) {
+		carp "Module $m already loaded";
+		return 0;
+	}
 	my $code;
 	my @path = ("/.anna/modules/", "/.anna/modules/core/", "/.anna/modules/auto/");
 	foreach my $p (@path) {
@@ -223,12 +228,13 @@ sub load {
 		carp "Can't find $m";
 		return 0;
 	}
-	eval $code;
+	eval "package Anna::Module::$m; $code";
 	if ($@) {
 		carp "Failed to load $m: $@";
 		# XXX cleanup possible cruft from database
 		return 0;
 	}
+	package Anna::Module;
 	return 1;
 }
 

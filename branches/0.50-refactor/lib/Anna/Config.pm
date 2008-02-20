@@ -48,7 +48,7 @@ sub new {
 		bannedwords	=> [],
 		voice_auth	=> undef
 	};
-	
+ 
 	# Fill config with entries from database
 	my $dbh = new Anna::DB;
 	unless ($dbh) {
