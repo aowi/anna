@@ -1,12 +1,32 @@
 package Anna::Module;
 use strict;
 use warnings;
+
+use Exporter;
+our @EXPORT_OK = qw();
+our @EXPORT = qw(IRC CHAN NICK HOST TYPE MOD ARG);
+our @ISA = qw(Exporter);
+
 use Anna::DB;
 use Carp;
 
 # var: %modules
-# Semiprotected global, that holds the name of all modules with registered events.
-my %modules;
+# Global, that holds the name of all modules with registered events. Don't
+# mess with this outside Anna::Module!
+our %modules;
+
+# ugly, dirty and alltogether bad.
+# These subs are exported per default and used as constant expressions by 
+# modules, to avoid having to keep track of argument order, and to allow us to
+# reorder or add more args later, without breaking existing modules.
+#
+sub IRC  () {  0 }
+sub CHAN () {  1 }
+sub NICK () {  2 }
+sub HOST () {  3 }
+sub TYPE () {  4 }
+sub MOD  () {  5 }
+sub ARG  () {  6 }
 
 # sub: new
 # Create new instance of Anna::Module. Modules can use this to register for 
@@ -19,6 +39,10 @@ my %modules;
 # 	Anna::Module-object, zero on failure
 sub new {
 	my ($class, $name) = @_;
+	unless (defined $name && $name) {
+		carp "new Anna::Module requested, but no name was supplied";
+		return 0;
+	}
 	if (module_loaded($name)) {
 		carp "Module $name already loaded";
 		return 0;
@@ -179,12 +203,9 @@ sub execute {
 		return 1;
 	}
 	
-	# XXX Why do I need this for $modules{$name} to NOT return undef in eval?
-	%modules;
-
 	# Params are: Message, IRC-object, channel, nick, host
 	my $s = \&{ "Anna::Module::".$name."::".$sub };
-	eval '$s->($m, $heap->{irc}, $channel, $nick, $host, $type, $modules{$name})';
+	eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $modules{$name}, $m)';
 	print $@."\n" if (defined $@);
 
 	return 1;
@@ -213,11 +234,11 @@ sub load {
 	my @path = ("/.anna/modules/", "/.anna/modules/core/", "/.anna/modules/auto/");
 	foreach my $p (@path) {
 		if (-f $ENV{'HOME'}.$p.$m.".pl") {
-			open(MOD, "<", $ENV{'HOME'}.$p.$m.".pl") or croak $!;
-			while (<MOD>) {
+			open(MODULE, "<", $ENV{'HOME'}.$p.$m.".pl") or croak $!;
+			while (<MODULE>) {
 				$code .= $_;
 			}
-			close(MOD) or croak $!;
+			close(MODULE) or croak $!;
 			last;
 		}
 	}

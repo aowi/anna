@@ -43,7 +43,7 @@ Group: Anna  {
    File: Utils.pm  (lib/Anna/Utils.pm)
    }  # Group: Anna
 
-File: Anna.pm  (lib/Anna.pm)
+File: command_bind  (lib/Anna.pm)
 
 Group: Index  {
 

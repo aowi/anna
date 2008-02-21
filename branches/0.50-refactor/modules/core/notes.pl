@@ -3,11 +3,16 @@ use warnings;
 use Anna;
 use Anna::DB;
 use Anna::Utils;
+use Anna::Module;
+
+my $m = Anna::Module->new('notes');
+$m->registercmd('mynotes', 'mynotes')->registercmd('notes', 'notes');
+
 ## bot_mynotes
 # Return all notes belonging to a user
 # Takes one param: username to search for
 sub mynotes {
-	my ($irc, $channel, $nick, $type) = @_[1, 2, 3, 5];
+	my ($irc, $channel, $nick, $type) = @_[IRC, CHAN, NICK, TYPE];
 	
 	my $query = "SELECT word FROM notes WHERE author = ? ORDER BY word ASC";
 	my $sth = Anna::DB->new->prepare($query);
@@ -46,7 +51,7 @@ sub mynotes {
 # This manages calc-stuff. Calc is a small system to associate a word or 
 # little sentence with a longer sentence, answer, solution, retort, whatever.
 sub note {
-	my ($note, $irc, $target, $nick) = @_;
+	my ($note, $irc, $target, $nick) = @_[ARG, IRC, CHAN, NICK];
 	
 	my ($dbh, $query, $sth, @row);
 	$dbh = new Anna::DB;
@@ -120,6 +125,3 @@ sub note {
 		$irc->yield(privmsg => $target => "'".$note."' was not found, sorry");
 	}
 }
-command_bind("notes", "mynotes", "mynotes");
-command_bind("notes", "note", "note");
-

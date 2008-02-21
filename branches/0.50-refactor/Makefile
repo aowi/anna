@@ -9,7 +9,7 @@ install:
 	cp -f anna.db /usr/local/share/anna/anna.db
 	chmod a+r /usr/local/share/anna/anna.db
 
-dev-modules:
+modules_install:
 	cp -r modules /home/arkanoid/.anna/
 
 zomgdocs:

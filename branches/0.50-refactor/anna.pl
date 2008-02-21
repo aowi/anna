@@ -272,6 +272,7 @@ sub _start {
 
 	Anna::Module::load('haiku') or die "Failed loading module haiku";	
 	Anna::Module::load('notes') or die "Failed loading module notes";	
+	Anna::Module::load('debug') or die "Failed loading module debug";	
 	# Connect
 	$kernel->yield("connect");
 }

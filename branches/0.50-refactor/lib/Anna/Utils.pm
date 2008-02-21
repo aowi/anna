@@ -5,7 +5,7 @@ use warnings;
 our @EXPORT = qw(INT colour warning error rtrim ltrim trim print_time calc_diff version usage);
 our @EXPORT_OK = qw();
 use Exporter;
-our  @ISA = qw(Exporter);
+our @ISA = qw(Exporter);
 
 use Anna::Config;
 use Carp;

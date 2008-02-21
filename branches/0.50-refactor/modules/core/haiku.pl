@@ -3,13 +3,11 @@ use warnings;
 use Anna::Module;
 use Anna::DB;
 
-# Params are message, IRC-object, channel, nick, host
-
 ## bot_addhaiku
 # This subroutine adds a haiku poem to the database
 # params is the poem to be added and $nick (to get the author)
 sub addhaiku {
-	my ($haiku, $irc, $channel, $nick) = @_;
+	my ($haiku, $irc, $channel, $nick) = @_[ARG, IRC, CHAN, NICK];
 	
 	if ($haiku =~ /.* ## .* ## .*/){
 		my $query = "INSERT INTO haiku (poem, author) 
@@ -27,7 +25,7 @@ sub addhaiku {
 ## bot_haiku
 # This returns a haiku
 sub haiku {
-	my ($irc, $channel) = @_[1, 2];
+	my ($irc, $channel) = @_[IRC, CHAN];
 	my (@rows, @haiku);
 	my $query = "SELECT * FROM haiku";
 	my $sth = Anna::DB->new->prepare($query);
