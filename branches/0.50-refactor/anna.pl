@@ -269,6 +269,7 @@ sub _start {
 	# Get stuff into the heap
 	$heap->{log} = $log;
 	$heap->{irc} = $irc;
+
 	Anna::Module::load('haiku') or die "Failed loading module haiku";	
 	Anna::Module::load('notes') or die "Failed loading module notes";	
 	# Connect

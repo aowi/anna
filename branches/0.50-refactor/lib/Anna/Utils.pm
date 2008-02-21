@@ -9,6 +9,7 @@ our  @ISA = qw(Exporter);
 
 use Anna::Config;
 use Carp;
+use POSIX qw(strftime);
 
 ## Script constant
 # Miscallaneus constants that are available to the main script
@@ -254,11 +255,10 @@ sub calc_diff {
 
 # TODO: Make it configurable
 sub print_time {
-	my ($sec,$min,$hour,$mday,$mon,$year, $wday,$yday,$isdst) = localtime time;
-	$hour = "0".$hour if (length($hour) == 1);
-	$min = "0".$min if (length($min) == 1);
-	$sec = "0".$sec if (length($sec) == 1);
-	return sprintf "%d:%d:%d", $hour, $min, $sec;
+	if (@_ == 1) {
+		return strftime(shift, localtime);
+	}
+	return strftime("%H:%M:%S", localtime);
 }
 
 1;

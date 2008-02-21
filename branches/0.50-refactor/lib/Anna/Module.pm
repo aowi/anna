@@ -182,13 +182,10 @@ sub execute {
 	# XXX Why do I need this for $modules{$name} to NOT return undef in eval?
 	%modules;
 
-	# XXX turning off strict 'refs'... just pretend you didn't see this
 	# Params are: Message, IRC-object, channel, nick, host
-#	no strict 'refs';
 	my $s = \&{ "Anna::Module::".$name."::".$sub };
 	eval '$s->($m, $heap->{irc}, $channel, $nick, $host, $type, $modules{$name})';
 	print $@."\n" if (defined $@);
-#	use strict 'refs';
 
 	return 1;
 }
