@@ -70,10 +70,6 @@ sub module_loaded {
 		# Called as method
 		return 1;
 	} else {
-#		my $dbh = new Anna::DB or return undef;
-#		my $sth = $dbh->prepare("SELECT * FROM modules WHERE name = ? LIMIT 1");
-#		$sth->execute($n);
-#		return 1 if ($sth->fetchrow);
 		return 1 if (exists $modules{$n});
 	}
 	return 0;

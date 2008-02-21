@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 ## Anna^ IRC Bot
-# Copyright (C) 2006-2007 Anders Ossowicki <and@vmn.dk>
+# Copyright (C) 2006-2008 Anders Ossowicki <and@vmn.dk>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -273,6 +273,8 @@ sub _start {
 	Anna::Module::load('haiku') or die "Failed loading module haiku";	
 	Anna::Module::load('notes') or die "Failed loading module notes";	
 	Anna::Module::load('debug') or die "Failed loading module debug";	
+	Anna::Module::load('answer') or die "Failed loading module debug";	
+	Anna::Module::load('lart') or die "Failed loading module debug";	
 	# Connect
 	$kernel->yield("connect");
 }
@@ -400,11 +402,12 @@ sub parse_message {
 		my @rep = ($1,$2);
 		return $nick . ": ".$rep[rand(2)]."!";
 	}
-
+=cut out until regexp bindings are implemented
 	if ($msg =~ /^\Q$botnick\E[ :,-]+.*\?$/) {
 		$out = $nick . ": ".bot_answer();
 		return $out;
 	}
+=cut
 
 	# Return now, unless there's a trigger
 	# In case of a trigger, trim it and parse the remaining message
@@ -451,21 +454,8 @@ sub parse_message {
 		$out = bot_roulette($heap, $nick);
 	} elsif ($cmd =~/^reload$/i) {
 		$out = bot_reload($heap);
-	} elsif ($cmd =~ /^question\s+.*$/i) {
-		$out = bot_answer($heap, $nick);
-	} elsif ($cmd =~ /^addanswer\s+(.*)$/i) {
-		$out = bot_addanswer($heap, $1, $nick);
 	} elsif ($cmd =~ /^up(time|)$/i) {
 		$out = bot_uptime($heap);
-	} elsif ($cmd =~ /^lart\s+(.*)$/i) {
-		$out = bot_lart($heap, $nick, $1);
-	} elsif ($cmd =~ /^addlart\s+(.*)$/i) {
-		$out = bot_addlart($heap, $1);
-		#} 
-	#elsif ($cmd =~ /^haiku$/i) {
-	#	$out = bot_haiku($heap);
-	#} elsif ($cmd =~ /^addhaiku\s+(.*)$/i) {
-	#	$out = bot_addhaiku($heap, $1, $nick);
 	} elsif ($cmd =~ /^addorder\s+(.*)$/i) {
 		$out = bot_addorder($heap, $1, $nick);
 	} elsif ($cmd =~ /^order\s+(.*)$/i) {
@@ -484,31 +474,6 @@ sub parse_message {
 ## Bot-routines
 # These are the various subs for the bot's commands.
 
-## bot_addanswer
-# Add an answer to the database
-sub bot_addanswer {
-	my ($heap, $answer, $nick) = @_;
-
-	my $query = "INSERT INTO answers (answer) VALUES (?)";
-	my $sth = Anna::DB->new->prepare($query);
-	$sth->execute($answer);
-	return "Answer added to database, thanks $nick!";
-}
-
-## bot_addlart
-# This subroutine adds a lart to the database.
-# LART syntax is !lart <lart>. <lart> _must_ contain a "##"-string 
-# which in substituted for the attacked's nick
-sub bot_addlart {
-	my ($heap, $lart) = @_;
-	if ($lart !~ /##/) {
-		return "Invalid LART. A Lart must contain '##' which is replaced by the luser's nick";
-	}
-	my $query = "INSERT INTO larts (lart) VALUES (?)";
-	my $sth = Anna::DB->new->prepare($query);
-	$sth->execute($lart);
-	return "LART inserted!";
-}
 
 ## bot_addop
 # Takes params: username to give op rights, the hostmask of the sender and the 
@@ -585,24 +550,6 @@ sub bot_addquote {
 	my $sth = Anna::DB->new->prepare($query);
 	$sth->execute($quote, $nick);
 	return "Quote inserted. Thanks ".$nick;
-}
-
-## bot_answer
-# Return a random answer
-sub bot_answer {
-	my ($heap, $nick) = @_;
-
-	my $query = "SELECT * FROM answers";
-	my $sth = Anna::DB->new->prepare($query);
-	$sth->execute();
-	
-	my $i = 0;
-	my (@rows, @answers);
-	while (@rows = $sth->fetchrow()) {
-		$answers[$i] = $rows[1];
-		$i++;
-	}
-	return $nick.": ".$answers[rand scalar @answers];
 }
 
 ## bot_auth
@@ -740,7 +687,6 @@ sub bot_fortune {
 			$cmd_args .= " -a" if ($args =~ s/\W-a\W//);
 			$cmd_args .= " -e" if ($args =~ s/\W-e\W//);
 			$cmd_args .= " -o" if ($args =~ s/\W-o\W//);
-			$cmd_args .= " " . $1 if ($args =~ /(.+)/);
 			
 			my $fortune = qx($fortune_app -s $cmd_args 2>/dev/null);
 			return "No fortunes found" if $fortune eq '';
@@ -880,37 +826,6 @@ sub bot_karma_update {
 		# No need to inform of the karma-change
 		return 'FALSE';
 	}
-}
-
-## bot_lart
-# This subroutine takes one argument (the nick to be lart'ed) and
-# returns a random insult
-sub bot_lart {
-	my ($heap, $nick, $luser) = @_;
-	
-	my $c = new Anna::Config;
-	if (lc $luser  eq lc $c->get('nick') ) {
-		return $nick . ": NAY THOU!";
-	}
-	
-	my $query = "SELECT * FROM larts";
-	my $sth = Anna::DB->new->prepare($query);
-	$sth->execute();
-
-	my $i = 0;
-	my (@rows, @larts);
-	while (@rows = $sth->fetchrow()) {
-		$larts[$i] = $rows[1];
-		$i++;
-	}
-	my $lart = $larts[rand scalar @larts];
-	if ($luser eq 'me') {
-		$luser = $nick;
-	}
-	$lart =~ s/##/$luser/;
-	
-	$heap->{irc}->yield(ctcp => $c->get('channel') => 'ACTION '.$lart);
-	return 'FALSE';
 }
 
 ## bot_lastseen
