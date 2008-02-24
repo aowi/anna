@@ -1,6 +1,8 @@
 TODO for module-refactoring:
 * Implement support for binding regexps
 * Implement support for binding to specific events
+* Implement onload-routine that is called when a module is loaded
+* --||-- onunload, onwhatelse?
 * Dynamic module-loading (that is, allow admins to issue 'load foo' to load 
   module foo)
   For the time being, the loading-stuff is working, but has to be called 

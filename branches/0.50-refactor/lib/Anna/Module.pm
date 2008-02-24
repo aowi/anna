@@ -19,7 +19,6 @@ our %modules;
 # These subs are exported per default and used as constant expressions by 
 # modules, to avoid having to keep track of argument order, and to allow us to
 # reorder or add more args later, without breaking existing modules.
-#
 sub IRC  () {  0 }
 sub CHAN () {  1 }
 sub NICK () {  2 }
@@ -125,7 +124,9 @@ sub cmd_exists_in_db {
 		carp "Couldn't get database-handle: $DBI::errstr";
 		return 0;
 	}
-	my $sth = $dbh->prepare("SELECT value FROM modules WHERE type = 'command' AND value = ?");
+	my $sth = $dbh->prepare(qq{
+		SELECT value FROM modules WHERE type = 'command' AND value = ?
+	});
 	$sth->execute($cmd);
 	$sth->fetchrow ? return 1 : return 0;
 }
@@ -165,14 +166,14 @@ sub registercmd {
 }
 
 # sub: execute
-# Scans the command-table for commands matching the provided message. Executes the corresponding
-# module subroutine if a command is found.
+# Scans the command-table for commands matching the provided message. Executes
+# the corresponding module subroutine if a command is found.
 #
 # Parameters:
 # 	cmd - the full command (including args, excluding trigger)
 # 	heap - ref to POE heap
-# 	channel - the target the message is to be returned to (in case of channels a channel-name,
-# 	in case of privmsgs the user who sent the message)
+# 	channel - the target the message is to be returned to (in case of channels a 
+# 	channel-name, in case of privmsgs the user who sent the message)
 # 	nick - the nickname of the sender of the message
 # 	host - senders hostname
 # 	type - type of message. 'public' for messages to channels, 'msg' for private messages
@@ -189,7 +190,9 @@ sub execute {
 		return 1;
 	}
 	my ($c, $m) = split(' ', $cmd, 2);
-	my $sth = $dbh->prepare("SELECT * FROM modules WHERE type = 'command' AND value = ?");
+	my $sth = $dbh->prepare(qq{
+		SELECT * FROM modules WHERE type = 'command' AND value = ?
+	});
 	$sth->execute($c);
 	my ($name, $sub);
 	if (my $row = $sth->fetchrow_hashref) {
@@ -199,10 +202,9 @@ sub execute {
 		return 1;
 	}
 	
-	# Params are: Message, IRC-object, channel, nick, host
 	my $s = \&{ "Anna::Module::".$name."::".$sub };
 	eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $modules{$name}, $m)';
-	print $@."\n" if (defined $@);
+	confess $@."\n" if (defined $@);
 
 	return 1;
 }
