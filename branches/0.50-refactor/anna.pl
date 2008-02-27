@@ -46,21 +46,21 @@ use HTML::Entities;
 $SIG{'INT'} = 'ABORT';
 
 # Clean out remnants from last session
-Anna::Config::empty_db;
+#Anna::Config::empty_db;
 Anna::Module::empty_db;
 
 my $config = new Anna::Config(
-	server		=> "irc.blitzed.org",
-	nick		=> "Anna^",
-	username	=> "anna",
-	port		=> 6667,
-	channel		=> "#frokostgruppen",
-	name		=> "Boten Anna",
-	dbfile		=> $ENV{'HOME'}."/.anna/anna.db",
-	colour		=> 1,
-	trigger		=> "!",
-	debug		=> 0,
-	log		=> 1
+#	server		=> "irc.blitzed.org",
+#	nick		=> "Anna^",
+#	username	=> "anna",
+#	port		=> 6667,
+#	channel		=> "#frokostgruppen",
+#	name		=> "Boten Anna",
+#	dbfile		=> $ENV{'HOME'}."/.anna/anna.db",
+#	colour		=> 1,
+#	trigger		=> "!",
+#	debug		=> 0,
+#	log		=> 1
 );
 
 ## Read config-file (overrides default)
