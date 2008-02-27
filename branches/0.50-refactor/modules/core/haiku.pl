@@ -38,7 +38,6 @@ sub haiku {
 	}
 	my $out = $haiku[rand scalar @haiku];
 	my @h = split(' ## ', $out);
-#	$out =~ s/ ## /\n/g;
 	$irc->yield(privmsg => $channel => $_) for @h;
 }
 
