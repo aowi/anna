@@ -1,13 +1,12 @@
 1.35
 Perl
 /home/arkanoid/src/anna/branches/0.50-refactor/lib/Anna/Debug.pm	1199707315	1	/home/arkanoid/src/anna/branches/0.50-refactor/lib/Anna/Debug.pm
-/home/arkanoid/src/anna/branches/0.50-refactor/lib/Anna/Config.pm	1203540509	1	/home/arkanoid/src/anna/branches/0.50-refactor/lib/Anna/Config.pm
-/home/arkanoid/src/anna/branches/0.50-refactor/anna.pl	1203620405	0	/home/arkanoid/src/anna/branches/0.50-refactor/anna.pl
+/home/arkanoid/src/anna/branches/0.50-refactor/lib/Anna/Config.pm	1204154253	1	/home/arkanoid/src/anna/branches/0.50-refactor/lib/Anna/Config.pm
+/home/arkanoid/src/anna/branches/0.50-refactor/anna.pl	1204154074	0	/home/arkanoid/src/anna/branches/0.50-refactor/anna.pl
 /home/arkanoid/src/anna/branches/0.50-refactor/lib/Anna/Connection.pm	1199705636	1	/home/arkanoid/src/anna/branches/0.50-refactor/lib/Anna/Connection.pm
 /home/arkanoid/src/anna/branches/0.50-refactor/lib/Anna/CTCP.pm	1199706318	1	/home/arkanoid/src/anna/branches/0.50-refactor/lib/Anna/CTCP.pm
 /home/arkanoid/src/anna/branches/0.50-refactor/lib/Anna/DB.pm	1199706731	1	/home/arkanoid/src/anna/branches/0.50-refactor/lib/Anna/DB.pm
-/home/arkanoid/src/anna/branches/0.50-refactor/lib/Anna.pm	1200950373	1	command_bind
-/home/arkanoid/src/anna/branches/0.50-refactor/lib/Anna/Utils.pm	1203620220	1	/home/arkanoid/src/anna/branches/0.50-refactor/lib/Anna/Utils.pm
+/home/arkanoid/src/anna/branches/0.50-refactor/lib/Anna/Utils.pm	1203620918	1	/home/arkanoid/src/anna/branches/0.50-refactor/lib/Anna/Utils.pm
 /home/arkanoid/src/anna/branches/0.50-refactor/lib/Anna/Output.pm	1199738142	1	irclog
 /home/arkanoid/src/anna/branches/0.50-refactor/lib/Anna/Log.pm	1199736231	1	/home/arkanoid/src/anna/branches/0.50-refactor/lib/Anna/Log.pm
-/home/arkanoid/src/anna/branches/0.50-refactor/lib/Anna/Module.pm	1203620303	1	/home/arkanoid/src/anna/branches/0.50-refactor/lib/Anna/Module.pm
+/home/arkanoid/src/anna/branches/0.50-refactor/lib/Anna/Module.pm	1204154074	1	/home/arkanoid/src/anna/branches/0.50-refactor/lib/Anna/Module.pm

@@ -43,8 +43,6 @@ Group: Anna  {
    File: Utils.pm  (lib/Anna/Utils.pm)
    }  # Group: Anna
 
-File: command_bind  (lib/Anna.pm)
-
 Group: Index  {
 
    Index: Everything
