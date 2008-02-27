@@ -204,7 +204,7 @@ sub execute {
 	
 	my $s = \&{ "Anna::Module::".$name."::".$sub };
 	eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $modules{$name}, $m)';
-	confess $@."\n" if (defined $@);
+	confess $@ if (defined $@);
 
 	return 1;
 }
