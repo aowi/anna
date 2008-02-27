@@ -8,7 +8,6 @@ use Exporter;
 our @ISA = qw(Exporter);
 
 use Carp;
-use Data::Dumper;
 use Anna::Utils;
 use Anna::DB;
 
@@ -27,19 +26,6 @@ sub new {
 	croak "$class->new doesn't take any parameters" if @_;
 	my $i = 1;
 	return bless \$i, $class;
-}
-
-# sub: dump
-# Dumps the current configuration hash on stdout. Use for debugging
-# 
-# Params:
-# 	none
-#
-# Returns:
-# 	1
-sub dump {
-	print Dumper(%config);
-	return 1;
 }
 
 # Func: exists
