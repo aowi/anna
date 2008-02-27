@@ -7,7 +7,9 @@ TODO for module-refactoring:
   module foo)
   For the time being, the loading-stuff is working, but has to be called 
   manually from anna.pl. 
-  
+* Flesh out a sane interface for module-building 
+* Take a look at the eggdrop interface
+  http://www.eggheads.org/support/egghtml/1.6.18/tcl-commands.html
   Anna should load all modules from core/ and auto/ pr. default, when starting.
   
   Perhaps we should make a loader-module, that takes care of from-irc-loading. 
