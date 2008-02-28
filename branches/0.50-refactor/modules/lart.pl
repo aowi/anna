@@ -5,7 +5,7 @@ use Anna::Module;
 use Anna::DB;
 
 my $m = Anna::Module->new('lart');
-$m->registercmd('addlart', 'addlart')->registercmd('lart', 'lart');
+$m->bindcmd('addlart', 'addlart')->bindcmd('lart', 'lart');
 
 sub addlart {
 	my ($irc, $target, $lart) = @_[IRC, CHAN, ARG];

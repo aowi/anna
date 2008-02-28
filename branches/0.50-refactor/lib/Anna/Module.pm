@@ -132,8 +132,8 @@ sub cmd_exists_in_db {
 }
 
 
-# sub: registercmd
-# Used as a method to register a command
+# sub: bindcmd
+# Used as a method to bind a command to a subroutine
 #
 # Parameters:
 # 	cmd - the cmd to listen for
@@ -141,16 +141,16 @@ sub cmd_exists_in_db {
 #
 # Returns:
 # 	The object (caller)
-sub registercmd {
+sub bindcmd {
 	unless (@_ == 3) {
-		carp "registercmd takes two parameters: command and sub";
+		carp "bindcmd takes two parameters: command and sub";
 		return $_[0];
 	}
 	my $pkg = shift;
 	my ($cmd, $sub) = @_;
 	my $mod = $pkg->{'name'};
 	if (cmd_exists_in_db($cmd)) {
-		carp "Failed to register cmd $cmd: Already existing";
+		carp "Failed to bind cmd $cmd: Already existing";
 		return $pkg;
 	}
 	my $dbh = new Anna::DB or return $pkg;
@@ -165,12 +165,53 @@ sub registercmd {
 	return $pkg;
 }
 
+# sub: bindregxp
+#
+# Binds a regular expression to a subroutine. When the regular expression
+# matches a message written in channel, the sub will be triggered.
+#
+# Params:
+# 	regexp 	- the regular expression (as a scalar/string, without //)
+# 	sub 	- the subroutine that will be executed when the regexp is found
+#
+# Returns:
+# 	the Module-object
+sub bindregexp {
+	my ($pkg, $rx, $sub) = @_;
+	eval { "" =~ /$rx/ };
+	if ($@) {
+		carp "Invalid pattern $rx ignored: $@";
+		return $pkg;
+	}
+
+	my $dbh = new Anna::DB or return $pkg;
+	my $rv = $dbh->do(qq{
+		INSERT INTO modules (name, type, value, sub)
+		VALUES (?, 'regexp', ?, ?)},
+		undef, ($pkg->{'name'}, $rx, $sub)
+	);
+	unless (defined $rv) {
+		carp "Failed to add regexp $rx to DB: $DBI::errstr";
+	}
+	return $pkg;	
+}
+
+# sub: bindevent
+#
+# Binds a given event to a subroutine. When the event is triggered, the 
+# subroutine is executed with the relevant event information.
+#
+# Params:
+# 	event	- event to listen for (see POE::IRC::Component docs
+# 	sub		- subroutine that will be executed when the event is triggered
+sub bindevent {}
+
 # sub: execute
 # Scans the command-table for commands matching the provided message. Executes
 # the corresponding module subroutine if a command is found.
 #
 # Parameters:
-# 	cmd - the full command (including args, excluding trigger)
+# 	msg - the full message, that were recieved
 # 	heap - ref to POE heap
 # 	channel - the target the message is to be returned to (in case of channels a 
 # 	channel-name, in case of privmsgs the user who sent the message)
@@ -182,8 +223,50 @@ sub registercmd {
 # 	1
 sub execute {
 	return 1 unless (@_ == 6);
+	my ($msg, $heap, $channel, $nick, $host, $type) = @_;
+	my $c = new Anna::Config;
+	my ($trigger, $botnick) = ($c->get('trigger'), $c->get('nick'));
+	# Command
+	if ($msg =~ /^(\Q$trigger\E|\Q$botnick\E[ :,-]+)/) {
+		my $cmd = $msg;
+		$cmd =~ s/^(\Q$trigger\E|\Q$botnick\E[ :,-]+\s*)//;
+		do_cmd($cmd, $heap, $channel, $nick, $host, $type);
+		return 1;
+	}
+
+	# Regexp
+	my $dbh = new Anna::DB or return 1;
+	my $sth = $dbh->prepare(qq{
+		SELECT * FROM modules WHERE type = 'regexp'
+	});
+	$sth->execute;
+	while (my $res = $sth->fetchrow_hashref)  {
+		my ($rx, $name, $sub) = ($res->{'value'}, $res->{'name'}, $res->{'sub'});
+		if ($msg =~ m/$rx/) {
+			my $s = \&{ "Anna::Module::".$name."::".$sub};
+			eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $modules{$name}, $msg)';
+			confess $@ if $@;
+		}
+	}
+	return 1;
+}
+
+# sub: do_cmd
+# Handles command-checking and execution, if a command-trigger is found.
+#
+# Params:
+# 	msg - the full message, that were recieved
+# 	heap - ref to POE heap
+# 	channel - the target the message is to be returned to (in case of channels a 
+# 	channel-name, in case of privmsgs the user who sent the message)
+# 	nick - the nickname of the sender of the message
+# 	host - senders hostname
+# 	type - type of message. 'public' for messages to channels, 'msg' for private messages
+#
+# Returns: 	
+# 	1
+sub do_cmd {
 	my ($cmd, $heap, $channel, $nick, $host, $type) = @_;
-	
 	my $dbh = new Anna::DB;
 	unless ($dbh) {
 		carp "Failed to obtain DB handle: $DBI::errstr";

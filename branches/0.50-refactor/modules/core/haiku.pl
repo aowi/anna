@@ -43,5 +43,5 @@ sub haiku {
 
 my $mod = Anna::Module->new("haiku");
 # Module name, command, sub
-$mod->registercmd("haiku", "haiku")->registercmd("addhaiku", "addhaiku");
+$mod->bindcmd("haiku", "haiku")->bindcmd("addhaiku", "addhaiku");
 1;

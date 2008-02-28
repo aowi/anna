@@ -1,5 +1,6 @@
 TODO for module-refactoring:
 * Implement support for binding regexps
+  * Add support for specifying flags
 * Implement support for binding to specific events
 * Implement onload-routine that is called when a module is loaded
 * --||-- onunload, onwhatelse?

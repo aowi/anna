@@ -5,7 +5,7 @@ use Anna::Module;
 use Data::Dumper;
 
 my $m = Anna::Module->new('debug');
-$m->registercmd('dumpvars', 'dumpvars');
+$m->bindcmd('dumpvars', 'dumpvars');
 
 sub dumpvars {
 	print Dumper(@_);

@@ -5,7 +5,7 @@ use Anna::Module;
 use Anna::DB;
 
 my $m = Anna::Module->new('answer');
-$m->registercmd('addanswer', 'addanswer')->registercmd('question', 'answer');
+$m->bindcmd('addanswer', 'addanswer')->bindcmd('question', 'answer');
 
 sub addanswer {
 	my ($answer, $nick, $irc, $target) = @_[ARG, NICK, IRC, CHAN];

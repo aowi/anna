@@ -1,12 +1,11 @@
 use strict;
 use warnings;
-use Anna;
 use Anna::DB;
 use Anna::Utils;
 use Anna::Module;
 
 my $m = Anna::Module->new('notes');
-$m->registercmd('mynotes', 'mynotes')->registercmd('notes', 'notes');
+$m->bindcmd('mynotes', 'mynotes')->bindcmd('notes', 'notes');
 
 ## bot_mynotes
 # Return all notes belonging to a user

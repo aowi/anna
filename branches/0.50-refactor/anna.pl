@@ -273,8 +273,9 @@ sub _start {
 	Anna::Module::load('haiku') or die "Failed loading module haiku";	
 	Anna::Module::load('notes') or die "Failed loading module notes";	
 	Anna::Module::load('debug') or die "Failed loading module debug";	
-	Anna::Module::load('answer') or die "Failed loading module debug";	
-	Anna::Module::load('lart') or die "Failed loading module debug";	
+	Anna::Module::load('answer') or die "Failed loading module answer";	
+	Anna::Module::load('lart') or die "Failed loading module lart";	
+	Anna::Module::load('dice') or die "Failed loading module dice";	
 	# Connect
 	$kernel->yield("connect");
 }
@@ -331,6 +332,18 @@ sub parse_message {
 	$msg = trim($msg);
 	
 	my $out = 'FALSE';
+	
+	my $target;
+	if ($type eq 'public') {
+		# Sent to a channel, so this is default return target
+		$target = $c->get('channel');
+	} else {
+		$target = $nick;
+	}
+	
+	# Check for module-bound commands
+	Anna::Module::execute($msg, $heap, $target, $nick, $host, $type) 
+		or die "Died while executing $msg.";
 
 	if ($type eq "public") {
 		# Public message (to a channel)
@@ -388,15 +401,15 @@ sub parse_message {
 		return;
 	}
 		
-	if ($msg =~ /^\Q$trigger\Edice (\d+d\d+)$/i) {
-		$out = bot_dice($1, $nick);
-		return $out;
-	}
+#	if ($msg =~ /^\Q$trigger\Edice (\d+d\d+)$/i) {
+#		$out = bot_dice($1, $nick);
+#		return $out;
+#	}
 
-	if ($msg =~ /^(\d+d\d+)$/i) {
-		$out = bot_dice($1, $nick);
-		return $out;
-	}
+#	if ($msg =~ /^(\d+d\d+)$/i) {
+#		$out = bot_dice($1, $nick);
+#		return $out;
+#	}
 	
 	if ($msg =~ /^\Q$botnick\E[ :,-]+(.*)\s+or\s+(.*)\?$/) {
 		my @rep = ($1,$2);
@@ -415,17 +428,7 @@ sub parse_message {
 	my $cmd = $msg;
 	$cmd =~ s/^(\Q$trigger\E|\Q$botnick\E[ :,-]+\s*)//;
 	
-	my $target;
-	if ($type eq 'public') {
-		# Sent to a channel, so this is default return target
-		$target = $c->get('channel');
-	} else {
-		$target = $nick;
-	}
 
-	# Check for module-bound commands
-	Anna::Module::execute($cmd, $heap, $target, $nick, $host, 
-		$type) or die "Died while executing $cmd. Full msg: $msg";
 
 
 	## Bot commands
@@ -633,7 +636,7 @@ sub bot_bash {
 	}
 	return $quote;
 }
-
+=begin gtfo
 ## bot_dice
 # This returns the result of a die roll (or several)
 # Syntax is '!dice <amount>d<sides>' or just <int>d<int>
@@ -671,7 +674,7 @@ sub bot_dice {
 	# It shouldn't be possible to end up here, but anyway
 	return 'Syntax error in diceroll. Correct syntax is <int>d<int>';
 }
-
+=cut back
 ## bot_fortune
 # Prints a fortune, if fortune is installed
 sub bot_fortune {
