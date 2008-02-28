@@ -23,7 +23,7 @@
 	    <a class='menu' href='http://trac.frokostgruppen.dk/newticket?component=anna'>
 	      Bugs
 	    </a><br />
-	    <a class='menu' href='http://git.frokostgruppen.dk/?p=anna.git'>
+	    <a class='menu' href='http://gitweb.frokostgruppen.dk/?p=anna.git'>
 	      gitweb
 	    </a><br />
 	  </div>
