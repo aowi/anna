@@ -276,6 +276,7 @@ sub _start {
 	Anna::Module::load('answer') or die "Failed loading module answer";	
 	Anna::Module::load('lart') or die "Failed loading module lart";	
 	Anna::Module::load('dice') or die "Failed loading module dice";	
+	Anna::Module::load('qms') or die "Failed loading module qms";
 	# Connect
 	$kernel->yield("connect");
 }
@@ -420,7 +421,7 @@ sub parse_message {
 		$out = $nick . ": ".bot_answer();
 		return $out;
 	}
-=cut
+=cut back
 
 	# Return now, unless there's a trigger
 	# In case of a trigger, trim it and parse the remaining message
@@ -451,8 +452,6 @@ sub parse_message {
 		$out = bot_quote($heap);
 	} elsif ($cmd =~ /^addquote\s+(.*)$/i) {
 		$out = bot_addquote($heap, $nick, $1);
-	} elsif ($cmd =~ /^bash(\s+(\#|)([0-9]+|random)|)$/i) {
-		$out = bot_bash($heap, $3);
 	} elsif ($cmd =~ /^roulette$/i) {
 		$out = bot_roulette($heap, $nick);
 	} elsif ($cmd =~/^reload$/i) {
@@ -603,39 +602,6 @@ sub bot_auth {
 	return "Error: wrong username or password";
 }
 
-## bot_bash
-# Takes one argument, the number of the bash quote.
-# Returns the quote.
-sub bot_bash {
-	my ($heap, $nr) = @_;
-
-	my $ua = new LWP::UserAgent;
-	$ua->agent("Mozilla/5.0" . $ua->agent);
-	my $request;
-	if (!$nr) {
-		$request = new HTTP::Request GET => "http://bash.org/?random";
-	} else {
-		$request = new HTTP::Request GET => "http://bash.org/?$nr";
-	}
-	my $get = $ua->request($request);
-	my $content = $get->content;
-	$content =~ s/\n//g;
-	# Find the quote. If this function stops working, the problem 
-	# lies here. (? makes sure we don't gobble up the whole page 
-	# on random quotes. Been there, done that)
-	$content =~ /\<p class\=\"qt\"\>(.*?)\<\/p\>/;
-	if (!$1) {
-		return "No quote found. Please check the number";
-	}
-	my @lines = split(/<br \/>.{1}/, $1);
-
-	my $quote = "";
-	foreach (@lines){
-		$_ = decode_entities($_);	
-		$quote .= $_."\n";
-	}
-	return $quote;
-}
 =begin gtfo
 ## bot_dice
 # This returns the result of a die roll (or several)
