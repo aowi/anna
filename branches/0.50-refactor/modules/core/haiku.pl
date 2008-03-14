@@ -2,6 +2,8 @@ use strict;
 use warnings;
 use Anna::Module;
 use Anna::DB;
+use POE;
+use Carp;
 
 ## bot_addhaiku
 # This subroutine adds a haiku poem to the database

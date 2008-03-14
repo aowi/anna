@@ -8,6 +8,8 @@ our @EXPORT = qw(IRC CHAN NICK HOST TYPE MOD ARG);
 our @ISA = qw(Exporter);
 
 use Anna::DB;
+use Anna::Config;
+use Anna::Utils;
 use Carp;
 
 # var: %modules
@@ -19,6 +21,7 @@ our %modules;
 # These subs are exported per default and used as constant expressions by 
 # modules, to avoid having to keep track of argument order, and to allow us to
 # reorder or add more args later, without breaking existing modules.
+# Idea stolen from POE, btw :)
 sub IRC  () {  0 }
 sub CHAN () {  1 }
 sub NICK () {  2 }
@@ -251,6 +254,25 @@ sub execute {
 	return 1;
 }
 
+# sub: loaddir
+# Scan a directory for anna-modules (or rather, .pl-files) and load them.
+#
+# Params:
+# 	dir - the (full) path to the directory to search
+#
+# Returns:
+# 	nothing
+sub loaddir {
+	my $dir = shift;
+	opendir(DIR, $dir) or croak $!;
+	while (defined(my $file = readdir(DIR))) {
+		if ($file =~ m/.pl$/) {
+			load($file);
+		}
+	}
+	closedir(DIR) or croak $!;
+}
+
 # sub: do_cmd
 # Handles command-checking and execution, if a command-trigger is found.
 #
@@ -307,6 +329,8 @@ sub load {
 		return 0;
 	}
 	my $m = shift;
+	$m =~ s/[.]pl$//;
+
 	if (module_loaded($m)) {
 		carp "Module $m already loaded";
 		return 0;
@@ -326,6 +350,9 @@ sub load {
 	unless ($code) {
 		carp "Can't find $m";
 		return 0;
+	}
+	if (Anna::Config->new->get('verbose')) {
+		printf "[%s] Loading module %s\n", print_time, $m;
 	}
 	eval "package Anna::Module::$m; $code";
 	if ($@) {

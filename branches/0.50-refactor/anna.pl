@@ -222,10 +222,11 @@ POE::Session->create(
 );
 
 ## Go for it!
+$poe_kernel->alias_set('irc');
 $poe_kernel->run();
 
 # Sayoonara
-print "[%s] Closing down... ", print_time() unless $config->get('silent');
+printf "[%s] Closing down... ", print_time() unless $config->get('silent');
 
 
 print "sayoonara\n" unless $config->get('silent');
@@ -270,13 +271,11 @@ sub _start {
 	$heap->{log} = $log;
 	$heap->{irc} = $irc;
 
-	Anna::Module::load('haiku') or die "Failed loading module haiku";	
-	Anna::Module::load('notes') or die "Failed loading module notes";	
-	Anna::Module::load('debug') or die "Failed loading module debug";	
 	Anna::Module::load('answer') or die "Failed loading module answer";	
 	Anna::Module::load('lart') or die "Failed loading module lart";	
-	Anna::Module::load('dice') or die "Failed loading module dice";	
 	Anna::Module::load('qms') or die "Failed loading module qms";
+	Anna::Module::loaddir($ENV{'HOME'}."/.anna/modules/core/");
+	Anna::Module::loaddir($ENV{'HOME'}."/.anna/modules/auto/");
 	# Connect
 	$kernel->yield("connect");
 }
