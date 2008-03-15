@@ -126,7 +126,6 @@ sub error {
 		carp "Missing string in Anna::Utils::error.";
 		return;
 	}
-	# TODO: NOT a good solution, but worksfornow
 	return $errmsg if (!-t STDERR);
 	return colour($errmsg, "91");
 }
@@ -252,8 +251,6 @@ sub calc_diff {
 #
 # Returns:
 # 	hour:min:sec
-
-# TODO: Make it configurable
 sub print_time {
 	if (@_ == 1) {
 		return strftime(shift, localtime);
