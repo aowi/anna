@@ -49,7 +49,11 @@ sub new {
 		carp "Module $name already loaded";
 		return 0;
 	}
-	my $module = {name => $name};
+	my $db = new Anna::DB $name;
+	my $module = {
+		name 	=> $name,
+		db		=> $db,
+	};
 	my $r = bless $module, $class;
 	$modules{$name} = $r;
 	return $r;

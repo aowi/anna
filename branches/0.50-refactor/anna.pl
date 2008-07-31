@@ -47,7 +47,7 @@ $SIG{'INT'} = 'ABORT';
 
 # Clean out remnants from last session
 #Anna::Config::empty_db;
-Anna::Module::empty_db;
+#Anna::Module::empty_db;
 
 my $config = new Anna::Config(
 #	server		=> "irc.blitzed.org",
@@ -123,9 +123,10 @@ if (!(-e Anna::Utils->CONFIGDIR."/anna.db")) {
 	my $dbf = Anna::Utils->CONFIGDIR."/anna.db";
 	print "This seems to be the first time you're running Anna^... welcome!\n";
 	unless (-e $ENV{'HOME'}."/.anna") {
-		print "Creating ~/.anna directory to store information... " 
+		print "Creating ~/.anna directory structure to store information... " 
 			if ($config->get('verbose'));
 		mkdir $ENV{'HOME'}."/.anna" or die "\nFailed to create ~/.anna/ directory. $!";
+		mkdir $ENV{'HOME'}."/.anna/registry" or die "\nFailed to create ~/.anna/registry directory. $!";
 		print "done!\n" if ($config->get('verbose'));
 	}
 	# Copy database to home
@@ -271,9 +272,9 @@ sub _start {
 	$heap->{log} = $log;
 	$heap->{irc} = $irc;
 
-	Anna::Module::load('answer') or die "Failed loading module answer";	
-	Anna::Module::load('lart') or die "Failed loading module lart";	
-	Anna::Module::load('qms') or die "Failed loading module qms";
+#	Anna::Module::load('answer') or die "Failed loading module answer";	
+#	Anna::Module::load('lart') or die "Failed loading module lart";	
+#	Anna::Module::load('qms') or die "Failed loading module qms";
 	Anna::Module::loaddir($ENV{'HOME'}."/.anna/modules/core/");
 	Anna::Module::loaddir($ENV{'HOME'}."/.anna/modules/auto/");
 	# Connect

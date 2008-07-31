@@ -9,6 +9,7 @@ our  @ISA = qw(Exporter);
 
 use Carp;
 use Anna::Output qw(irclog);
+use Anna::Config;
 use Anna::Utils;
 use POE;
 
@@ -95,7 +96,7 @@ sub on_ctcp_version {
 	$h->{irc}->yield(ctcpreply => $nick => Anna::Utils::SCRIPT_NAME." : ".Anna::Utils::SCRIPT_VERSION." : ".Anna::Utils::SCRIPT_SYSTEM);
 	irclog('status' => sprintf "-!- CTCP VERSION request from %s recieved", $nick);
 	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." CTCP VERSION request from %s recieved\n",
-		print_time(), $nick if $h->{config}->get('verbose');
+		print_time(), $nick if Anna::Config->new->get('verbose');
 }
 
 # sub: on_ctcpreply_version

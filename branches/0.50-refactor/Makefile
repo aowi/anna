@@ -10,7 +10,7 @@ install:
 	chmod a+r /usr/local/share/anna/anna.db
 
 modules_install:
-	cp -r modules /home/arkanoid/.anna/
+	cp -r modules /home/arkanoid/.anna/modules
 
 docs:
 	/usr/bin/NaturalDocs -i . -o html api/ -p api/nd/ -xi modules/ -do 

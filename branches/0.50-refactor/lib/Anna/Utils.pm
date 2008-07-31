@@ -39,7 +39,7 @@ use POSIX qw(strftime);
 
 use constant STARTTIME          => time;
 use constant SCRIPT_NAME        => "Anna^ IRC Bot";
-use constant SCRIPT_VERSION     => "0.40-svn";
+use constant SCRIPT_VERSION     => "0.50-git";
 use constant SCRIPT_RELEASE     => "Thu May 17 17:02:20 CEST 2007";
 use constant SCRIPT_SYSTEM      => `uname -sr`;
 use constant SCRIPT_AUTHOR		=> "Anders Ossowicki";
