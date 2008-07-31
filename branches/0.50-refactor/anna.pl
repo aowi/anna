@@ -118,9 +118,9 @@ $config->delete('silent') if ($config->get('verbose') && $config->get('silent'))
 version() unless $config->get('silent');
 
 # Check for first-run
-if (!(-e Anna::Utils->DB_LOCATION)) {
+if (!(-e Anna::Utils->CONFIGDIR."/anna.db")) {
 	# First run
-	my $dbf = Anna::Utils->DB_LOCATION;
+	my $dbf = Anna::Utils->CONFIGDIR."/anna.db";
 	print "This seems to be the first time you're running Anna^... welcome!\n";
 	unless (-e $ENV{'HOME'}."/.anna") {
 		print "Creating ~/.anna directory to store information... " 
@@ -238,7 +238,7 @@ sub _start {
 	my ($kernel, $heap, $session) = @_[KERNEL, HEAP, SESSION];
 
 	# Connect to database
-	printf("Connecting to SQLite database %s...", Anna::Utils->DB_LOCATION) 
+	printf("Connecting to SQLite database %s...", Anna::Utils->CONFIGDIR."/anna.db") 
 		if ($config->get('verbose'));
 	
 	my $dbh = new Anna::DB or die "Couldn't connect to SQLite DB";
@@ -261,7 +261,7 @@ sub _start {
 	print "done!\n" if ($config->get('verbose'));
 
 	# Create logfile
-	my $log = new Anna::Log (
+	my $log = new Anna::Log(
 		format	=> 'service',
 		name	=> 'core',
 		heap	=> \$heap

@@ -31,8 +31,8 @@ use POSIX qw(strftime);
 # Constant: SCRIPT_EMAIL
 # Authors email
 #
-# Constant: DB_LOCATION
-# Location of the anna sqlite database
+# Constant: CONFIGDIR
+# Path to Anna^'s configuration directory
 #
 # Constant: DB_VERSION
 # The DB layout version this script supports.
@@ -42,9 +42,9 @@ use constant SCRIPT_NAME        => "Anna^ IRC Bot";
 use constant SCRIPT_VERSION     => "0.40-svn";
 use constant SCRIPT_RELEASE     => "Thu May 17 17:02:20 CEST 2007";
 use constant SCRIPT_SYSTEM      => `uname -sr`;
-use constant SCRIPT_AUTHOR	=> "Anders Ossowicki";
-use constant SCRIPT_EMAIL	=> 'and@vmn.dk';
-use constant DB_LOCATION	=> "$ENV{'HOME'}/.anna/anna.db";
+use constant SCRIPT_AUTHOR		=> "Anders Ossowicki";
+use constant SCRIPT_EMAIL		=> 'and@vmn.dk';
+use constant CONFIGDIR			=> "$ENV{'HOME'}/.anna/";
 use constant DB_VERSION         => 2;
 
 # sub: version

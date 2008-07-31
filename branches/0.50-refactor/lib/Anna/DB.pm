@@ -23,7 +23,12 @@ use Carp;
 #   DB-handle (DBI, DBD::SQLite)
 sub new {
 	my $class = shift;
-	my $file = Anna::Utils->DB_LOCATION;
+	my $name = shift;
+	my $file = Anna::Utils->CONFIGDIR."/anna.db";
+	if (defined $name && $name ne '') {
+		$file = Anna::Utils->CONFIGDIR."/registry/".$name.".db";
+	}
+
 	my $dbh = DBI->connect(
 		"dbi:SQLite:dbname=".$file,
 		undef,
@@ -59,7 +64,7 @@ sub sync {
 	my $query = "SELECT * FROM sqlite_master WHERE type = ? AND name = ?";
 	my $sth = $dbh->prepare($query);
 	$sth->execute("table", "admin");
-	my $dbfile = Anna::Utils->DB_LOCATION;
+	my $dbfile = Anna::Utils->CONFIGDIR."/anna.db";
 	if ($sth->fetchrow()) {
 		# Okay, admin table exists, fetch database version
 		$query = "SELECT * FROM admin WHERE option = 'db_version'";
