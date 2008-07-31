@@ -2,7 +2,9 @@ package Anna::Utils;
 use strict;
 use warnings;
 
-our @EXPORT = qw(INT colour warning error rtrim ltrim trim print_time calc_diff version usage);
+our @EXPORT = qw/INT colour warning error rtrim ltrim trim print_time 
+				 calc_diff version usage print_formatted_message 
+				 debug_print warn_print error_print verbose_print/;
 our @EXPORT_OK = qw();
 use Exporter;
 our @ISA = qw(Exporter);
@@ -256,6 +258,79 @@ sub print_time {
 		return strftime(shift, localtime);
 	}
 	return strftime("%H:%M:%S", localtime);
+}
+
+# sub: print_formatted_message
+# Print message with standard formatting
+#
+# Parameters:
+#   message
+#
+# Returns:
+#   undef
+sub print_formatted_message {
+	my $msg = shift;
+	return unless ($msg);
+	printf "[%s] %s!%s %s\n", print_time(), colour('-', '94'), colour('-', '94'), $msg;
+}
+
+# sub: debug_print
+# Print message on debug level. Use this for information only needed during 
+# debugging and development
+#
+# Parameters: 
+# 	message
+#
+# Returns:
+# 	undef
+sub debug_print {
+	return unless Anna::Config->new->get('debug');
+	my $msg = shift;
+	return unless ($msg);
+	print_formatted_message("[DEBUG] ".$msg);
+}
+
+# sub: warn_print
+# Print message on warning level. Use this for general warnings about operations
+#
+# Parameters: 
+# 	message
+#
+# Returns:
+# 	undef
+sub warn_print {
+	my $msg = shift;
+	return unless ($msg);
+	print_formatted_message("[WARNING] ".colour($msg, '93'));
+}
+
+# sub: error_print
+# Print message on error level. Use this for non-critical errors.
+#
+# Parameters: 
+# 	message
+#
+# Returns:
+# 	undef
+sub error_print {
+	my $msg = shift;
+	return unless ($msg);
+	print_formatted_message("[ERROR] ".colour($msg, '91'));
+}
+
+# sub: verbose_print
+# Print message only if verbose option was enabled. Use this for information that would normally be irrelevant 
+#
+# Parameters: 
+# 	message
+#
+# Returns:
+# 	undef
+sub verbose_print {
+	return unless Anna::Config->new->get('verbose');
+	my $msg = shift;
+	return unless ($msg);
+	print_formatted_message($msg);
 }
 
 1;

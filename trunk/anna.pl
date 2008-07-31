@@ -47,7 +47,7 @@ $SIG{'INT'} = 'ABORT';
 
 # Clean out remnants from last session
 #Anna::Config::empty_db;
-#Anna::Module::empty_db;
+Anna::Module::empty_db; # XXX: Makes firstrun fail
 
 my $config = new Anna::Config(
 #	server		=> "irc.blitzed.org",
@@ -116,6 +116,13 @@ $config->delete('silent') if ($config->get('verbose') && $config->get('silent'))
 
 # Print welcome
 version() unless $config->get('silent');
+
+
+# XXX: temp
+warn_print("Testing warning level");
+error_print("Testing error level");
+debug_print("Testing debug level");
+verbose_print("Testing verbose level");
 
 # Check for first-run
 if (!(-e Anna::Utils->CONFIGDIR."/anna.db")) {
@@ -272,8 +279,8 @@ sub _start {
 	$heap->{log} = $log;
 	$heap->{irc} = $irc;
 
-	Anna::Module::loaddir($ENV{'HOME'}."/.anna/modules/core/");
-	Anna::Module::loaddir($ENV{'HOME'}."/.anna/modules/auto/");
+	Anna::Module::loaddir(Anna::Utils->CONFIGDIR."/modules/core/");
+	Anna::Module::loaddir(Anna::Utils->CONFIGDIR."/modules/auto/");
 	# Connect
 	$kernel->yield("connect");
 }

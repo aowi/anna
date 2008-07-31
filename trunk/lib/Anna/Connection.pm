@@ -55,8 +55,7 @@ sub do_connect() {
 	croak $std_croak unless defined $_[HEAP];
 	my $c = new Anna::Config;
 #	irclog('status', sprintf "-!- Connecting to %s", $c->get('server'));
-	printf "[%s] %s!%s Connecting to %s\n", print_time(), colour('-', '94'),
-		colour('-', '94'), $c->get('server') if $c->get('verbose');
+	verbose_print(sprintf("Connecting to %s", $c->get('server')));
 	$_[HEAP]->{irc}->yield(connect => {});
 	return 1;
 }
