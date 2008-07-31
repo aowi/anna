@@ -358,7 +358,11 @@ sub load {
 	if (Anna::Config->new->get('verbose')) {
 		printf "[%s] Loading module %s\n", print_time, $m;
 	}
-	eval "package Anna::Module::$m; $code";
+	eval qq{
+		package Anna::Module::$m; 
+		$code; 
+		&init if (defined &init)
+	};
 	if ($@) {
 		carp "Failed to load $m: $@";
 		# XXX cleanup possible cruft from database
