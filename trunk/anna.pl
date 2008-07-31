@@ -49,19 +49,7 @@ $SIG{'INT'} = 'ABORT';
 #Anna::Config::empty_db;
 Anna::Module::empty_db; # XXX: Makes firstrun fail
 
-my $config = new Anna::Config(
-#	server		=> "irc.blitzed.org",
-#	nick		=> "Anna^",
-#	username	=> "anna",
-#	port		=> 6667,
-#	channel		=> "#frokostgruppen",
-#	name		=> "Boten Anna",
-#	dbfile		=> $ENV{'HOME'}."/.anna/anna.db",
-#	colour		=> 1,
-#	trigger		=> "!",
-#	debug		=> 0,
-#	log		=> 1
-);
+my $config = new Anna::Config;
 
 ## Read config-file (overrides default)
 # By making two seperate if-conditions, the values of /etc/anna.conf will be
@@ -101,7 +89,7 @@ $config->parse_configfile($ENV{'HOME'}."/.anna/config") if (-r $ENV{'HOME'}."/.a
 if ($config->get('debug')) {
 	eval { use Data::Dumper; };
 	if ($@) {
-		print "Please install module Data::Dumper if you want to run Anna^ in debugging mode\n";
+		error_print "Please install module Data::Dumper if you want to run Anna^ in debugging mode";
 		$config->toggle('debug');
 	} else {
 #		sub POE::Kernel::ASSERT_DEFAULT () { 1 }

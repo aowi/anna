@@ -11,7 +11,20 @@ use Carp;
 use Anna::Utils;
 use Anna::DB;
 
-my %config = ();
+my %config = (
+	server		=> "irc.blitzed.org",
+	nick		=> "Anna^",
+	username	=> "anna",
+	port		=> 6667,
+	channel		=> "#frokostgruppen",
+	name		=> "Boten Anna",
+	dbfile		=> $ENV{'HOME'}."/.anna/anna.db",
+	colour		=> 1,
+	trigger		=> "!",
+	debug		=> 0,
+	verbose		=> 0,
+	log			=> 0
+);
 
 # Func: new
 # Generate a new configuration-object
