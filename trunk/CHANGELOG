@@ -166,4 +166,8 @@ Anna^ IRC Bot CHANGELOG
 	  before  it's copied over
 	- Bugfix: make !lart me work properly again
 	- Misc. minor bugfixes
-	
+
+0.50 Thu Jul 31 23:06:30 CEST 2008
+    - NOT RELEASED
+	- First step towards splitting out stuff into libraries and modules
+	- Nothing works
