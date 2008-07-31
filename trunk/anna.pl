@@ -272,9 +272,6 @@ sub _start {
 	$heap->{log} = $log;
 	$heap->{irc} = $irc;
 
-#	Anna::Module::load('answer') or die "Failed loading module answer";	
-#	Anna::Module::load('lart') or die "Failed loading module lart";	
-#	Anna::Module::load('qms') or die "Failed loading module qms";
 	Anna::Module::loaddir($ENV{'HOME'}."/.anna/modules/core/");
 	Anna::Module::loaddir($ENV{'HOME'}."/.anna/modules/auto/");
 	# Connect

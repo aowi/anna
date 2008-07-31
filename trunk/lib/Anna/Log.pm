@@ -12,6 +12,7 @@ our @ISA = qw(Exporter);
 
 use Carp;
 use Anna::Utils;
+use Anna::Config;
 
 # sub: new
 # Returns an instance of Anna::Log, which allows for logging to that specific 
@@ -97,7 +98,7 @@ sub write {
 		carp "$self->write called without a message!";
 		return 0;
 	}
-	return 1 unless $self->{heap}->{config}->get('log');
+	return 1 unless Anna::Config->new->get('log');
 	# TODO: make this configurable
 	my $logdir = $ENV{'HOME'}."/.anna/logs";
 

@@ -38,7 +38,7 @@ sub on_ctcp_ping {
 
 	irclog('status' => sprintf "-!- CTCP PING request from %s recieved", $nick);
 	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." CTCP PING request from %s recieved\n",
-		print_time(), $nick if $h->{config}->get('verbose');
+		print_time(), $nick if Anna::Config->new->get('verbose');
 }
 
 # sub: on_ctcpreply_ping
@@ -63,14 +63,14 @@ sub on_ctcpreply_ping {
 	unless ($msg) {
 		irclog('status' => sprintf "-!- Recieved invalid CTCP PING REPLY from %s", $nick);
 		printf "[%s] ".colour("-", "94")."!".colour("-", "94")." Recieved invalid CTCP PING REPLY from %s\n",
-			print_time(), $nick unless $h->{config}->get('silent');
+			print_time(), $nick unless Anna::Config->new->get('silent');
 		return 1;
 	}
 
 	my $diff = time - $msg;
 	irclog('status' => sprintf "-!- CTCP PING REPLY from %s: %s sec", $nick, $diff);
 	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." CTCP PING REPLY from %s: %s sec\n",
-		print_time(), $nick, $diff unless $h->{config}->get('silent');
+		print_time(), $nick, $diff unless Anna::Config->new->get('silent');
 }
 
 # sub: on_ctcp_version
@@ -121,13 +121,13 @@ sub on_ctcpreply_version {
 		irclog('status' => sprintf "-!- Recieved invalid CTCP VERSION REPLY from %s", $nick);
 		printf "[%s] %s!%s Recieved invalid CTCP VERSION REPLY from %s\n", 
 			print_time(), colour('-', '94'), colour('-', '94'), 
-			$nick unless $h->{config}->get('silent');
+			$nick unless Anna::Config->new->get('silent');
 		return 1;
 	}
 
 	irclog('status' => sprintf "-!- CTCP VERSION REPLY from %s: %s", $nick, $msg);
 	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." CTCP VERSION REPLY from %s: %s\n",
-		print_time(), $nick, $msg unless $h->{config}->get('silent');
+		print_time(), $nick, $msg unless Anna::Config->new->get('silent');
 }
 
 # sub: on_ctcp_time
@@ -153,7 +153,7 @@ sub on_ctcp_time {
 
 	irclog('status' => sprintf "-!- CTCP TIME recieved from %s", $nick);
 	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." CTCP TIME recieved from %s\n",
-		print_time(), $nick if $h->{config}->get('verbose');
+		print_time(), $nick if Anna::Config->new->get('verbose');
 }
 
 # sub: on_ctcp_finger
@@ -184,7 +184,7 @@ sub on_ctcp_finger {
 
 	irclog('status' => sprintf "-!- CTCP FINGER recieved from %s", $nick);
 	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." CTCP FINGER recieved from %s\n",
-		print_time(), $nick if $h->{config}->get('verbose');
+		print_time(), $nick if Anna::Config->new->get('verbose');
 }
 
 1;
