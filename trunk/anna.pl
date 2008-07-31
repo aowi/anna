@@ -118,11 +118,9 @@ if (!(-e Anna::Utils->CONFIGDIR."/anna.db")) {
 	my $dbf = Anna::Utils->CONFIGDIR."/anna.db";
 	print "This seems to be the first time you're running Anna^... welcome!\n";
 	unless (-e $ENV{'HOME'}."/.anna") {
-		print "Creating ~/.anna directory structure to store information... " 
-			if ($config->get('verbose'));
+		verbose_print "Creating ~/.anna directory structure to store information...";
 		mkdir $ENV{'HOME'}."/.anna" or die "\nFailed to create ~/.anna/ directory. $!";
 		mkdir $ENV{'HOME'}."/.anna/registry" or die "\nFailed to create ~/.anna/registry directory. $!";
-		print "done!\n" if ($config->get('verbose'));
 	}
 	# Copy database to home
 	print "Creating database for Anna^ and filling it... " if ($config->get('verbose'));
@@ -222,10 +220,7 @@ $poe_kernel->alias_set('irc');
 $poe_kernel->run();
 
 # Sayoonara
-printf "[%s] Closing down... ", print_time() unless $config->get('silent');
-
-
-print "sayoonara\n" unless $config->get('silent');
+verbose_print("Closing down... sayoonara");
 exit(0);
 
 ## _start
@@ -234,17 +229,14 @@ sub _start {
 	my ($kernel, $heap, $session) = @_[KERNEL, HEAP, SESSION];
 
 	# Connect to database
-	printf("Connecting to SQLite database %s...", Anna::Utils->CONFIGDIR."/anna.db") 
-		if ($config->get('verbose'));
-	
+	verbose_print(sprintf("Connecting to SQLite database %s...", Anna::Utils->CONFIGDIR."/anna.db"));
 	my $dbh = new Anna::DB or die "Couldn't connect to SQLite DB";
-	print "done!\n" if ($config->get('verbose'));
+
 	# Syncronize the database (update if version doesn't match script)
 	Anna::DB::sync($dbh);
 
 	# Create IRC-connection object
-	printf("Creating connection to irc server: %s...", $config->get('server')) 
-		if $config->get('verbose');
+	verbose_print(sprintf("Creating connection to irc server: %s...", $config->get('server')));
 	my $irc = POE::Component::IRC->spawn(
 		ircname		=> $config->get('name'),
 		port		=> $config->get('port'),
@@ -252,9 +244,8 @@ sub _start {
 		server		=> $config->get('server'),
 		nick		=> $config->get('nick'),
 		debug		=> $config->get('debug')
-	) or die(error("\nCan't create connection to ".$config->get('server')));
+	) or die "\nCan't create connection to ".$config->get('server');
 	$irc->yield(register => 'all');
-	print "done!\n" if ($config->get('verbose'));
 
 	# Create logfile
 	my $log = new Anna::Log(
@@ -336,7 +327,7 @@ sub parse_message {
 	
 	# Check for module-bound commands
 	Anna::Module::execute($msg, $heap, $target, $nick, $host, $type) 
-		or die "Died while executing $msg.";
+		or error_print "Error while handling $msg.";
 
 	if ($type eq "public") {
 		# Public message (to a channel)
@@ -394,16 +385,6 @@ sub parse_message {
 		return;
 	}
 		
-#	if ($msg =~ /^\Q$trigger\Edice (\d+d\d+)$/i) {
-#		$out = bot_dice($1, $nick);
-#		return $out;
-#	}
-
-#	if ($msg =~ /^(\d+d\d+)$/i) {
-#		$out = bot_dice($1, $nick);
-#		return $out;
-#	}
-	
 	if ($msg =~ /^\Q$botnick\E[ :,-]+(.*)\s+or\s+(.*)\?$/) {
 		my @rep = ($1,$2);
 		return $nick . ": ".$rep[rand(2)]."!";
@@ -656,8 +637,7 @@ sub bot_fortune {
 		}
 	}
 	irclog('status' => "Failed to fetch fortune - make sure fortune is installed, and in your \$PATH\n");
-	print warning("Failed to fetch fortune - make sure fortune is installed, and in your \$PATH\n")
-		if Anna::Config->new->get('verbose');
+	warn_print "Failed to fetch fortune - make sure fortune is installed, and in your \$PATH";
 	return "No fortune, sorry :-(";
 }
 
@@ -1266,40 +1246,6 @@ sub bot_voice {
 	return;
 }
 
-## Do-routines
-# Various stuff that keeps the bot running in case of certain events
-
-## do_autoping
-# Let's pings ourself to ensure the connection is still alive
-#sub do_autoping {
-#	my ($kernel, $heap) = @_[KERNEL, HEAP];
-#	$heap->{irc}->yield(userhost => $heap->{irc}->nick_name) unless $heap->{seen_traffic};
-#	$heap->{seen_traffic} = 0;
-#	$kernel->delay(autoping => 300);
-#}
-
-## do_connect
-# Connect us!
-#sub do_connect {
-#	my $c = $_[HEAP]->{config};
-#	irclog('status', sprintf "-!- Connecting to %s", $c->get('server'));
-#	printf "[%s] %s!%s Connecting to %s\n", print_time(), colour('-', '94'),
-#		colour('-', '94'), $c->get('server') if $c->get('verbose');
-#	$_[HEAP]->{irc}->yield(connect => {});
-#}
-
-## do_reconnect
-# This handles reconnection when we've died for various reasons
-#sub do_reconnect {
-#	my $kernel = $_[KERNEL];
-#	# Disable autopings when disconnected
-#	$kernel->delay(autoping => undef);
-#	irclog('status', 'Attempting reconnect in 60 seconds...');
-#	printf "[%s] Attempting reconnect in 60 seconds...\n", print_time() 
-#		unless $_[HEAP]->{config}->get('silent');
-#	$kernel->delay(connect => 60);
-#}
-
 ## Err-routines
 # We get these when the irc server returns a numeric 4xx error. Print it to the 
 # user and react if nescessary
@@ -1311,8 +1257,7 @@ sub err_nick_taken {
 	my $c = new Anna::Config;
 	my $newnick = $c->get('nick') . int(rand(100));
 	irclog('status', sprintf "Nick taken, trying %s...", $newnick);
-	printf "[%s] Nick taken, trying %s...\n", print_time(), $newnick 
-		unless $c->get('silent'); 
+	verbose_print(sprintf("Nick taken, trying %s...", $newnick));
 	$_[HEAP]->{irc}->yield(nick => $newnick);
 	$_[HEAP]->{nickrecover} = 1;
 	$c->set('oldnick' => $c->get('nick'));
@@ -1326,9 +1271,7 @@ sub err_nick_taken {
 sub err_4xx_default {
 	my $args = $_[ARG2];
 	irclog('status' => sprintf "%s: %s", $args->[0], $args->[1]);
-	printf "[%s] ".colour('-', '94')."!".colour('-', '94')." %s: %s\n", 
-		print_time(), $args->[0], $args->[1] 
-			unless Anna::Config->new->get('silent');
+	warn_print(sprintf("%s: %s", $args->[0], $args->[1]));
 }
 
 ## Handle subroutines
@@ -1339,9 +1282,7 @@ sub err_4xx_default {
 sub on_324 {
 	return if ($_[ARG2]->[1] eq '+'); # No modes set
 	irclog('status' => sprintf "-!- Mode/%s %s", $_[ARG2]->[0], $_[ARG2]->[1]);
-	printf "[%s] %s!%s Mode/%s %s\n", print_time(), colour('-', 94), 
-		colour('-', 94), colour($_[ARG2]->[0], 96), $_[ARG2]->[1] 
-		if Anna::Config->new->get('verbose');
+	verbose_print(sprintf("Mode/%s %s", colour($_[ARG2]->[0], 96), $_[ARG2]->[1]));
 }
 
 ## on_329
@@ -1349,10 +1290,7 @@ sub on_324 {
 sub on_329 {
 	my $msg = $_[ARG2];
 	irclog('status' => sprintf "-!- Channel %s created %s", $msg->[0], scalar localtime $msg->[1]);
-	printf "[%s] %s!%s Channel %s created %s\n", print_time(), 
-		colour('-', 94), colour('-', 94), 
-		colour($msg->[0], 96), scalar localtime $msg->[1]
-			if Anna::Config->new->get('verbose');
+	verbose_print(sprintf("Channel %s created %s", colour($msg->[0], 96), scalar localtime $msg->[1]));
 }
 
 ## on_332
@@ -1361,8 +1299,7 @@ sub on_329 {
 sub on_332 {
 	my $msg = $_[ARG2];
 	irclog('status' => sprintf "-!- Topic for %s: %s", $msg->[0], $msg->[1]);
-	printf "[%s] ".colour('-', 94)."!".colour('-', 94)." Topic for %s: %s\n", print_time(), colour($msg->[0], '96'), $msg->[1]
-		if Anna::Config->new->get('verbose');
+	verbose_print(sprintf("Topic for %s: %s", colour($msg->[0], '96'), $msg->[1]));
 }
 
 ## on_333
@@ -1373,8 +1310,7 @@ sub on_332 {
 sub on_333 {
 	my $msg = $_[ARG2];
 	irclog('status' => sprintf "-!- Topic set by %s [%s]", $msg->[1], scalar localtime $msg->[2]);
-	printf "[%s] ".colour('-', 94)."!".colour('-', 94)." Topic set by %s [%s]\n", print_time(), $msg->[1], 
-		scalar localtime $msg->[2] if Anna::Config->new->get('verbose');
+	verbose_print(sprintf("Topic set by %s [%s]", $msg->[1], scalar localtime $msg->[2]));
 }
 
 ## on_namreply
@@ -1386,13 +1322,11 @@ sub on_namreply {
 	shift (@args); # discard the "="-sign
 	my $channel = shift(@args);
 	my @users = split(/ /, shift(@args));
-	my $out = sprintf "[%s] [".colour('Users', 32)." %s]\n", print_time(), 
-		colour($channel, 92);
+	my $out = sprintf "[".colour('Users', 32)." %s]\n", colour($channel, 92);
 	# FIXME: Do some automatic calculation instead of just printing in 
 	# five rows
 	my ($i, $j) = (0, 0);
 	for ($i = 0; $i <= $#users; $i++) {
-		$out .= sprintf "[%s] ", print_time() if ($j == 0);
 		$out .= sprintf "[%s] ", $users[$i];
 		if ($j == 4) {
 			$out .= sprintf "\n";
@@ -1403,7 +1337,7 @@ sub on_namreply {
 	}
 	## FIXME
 #	irclog('status' => $out);
-	printf "%s\n", $out if ($j != 0);
+	verbose_print($out);
 }
 
 ## on_msg
@@ -1476,15 +1410,13 @@ sub on_notice {
 	# No ! should indicate server message
 	if ($from !~ /!/) {
 		irclog('status' => sprintf "!%s %s", $from, $msg);
-		printf "[%s] %s %s\n", print_time(), colour("!".$from, '92'), $msg 
-			unless $c->get('silent');
+		verbose_print(sprintf("%s %s", colour("!".$from, '92'), $msg)); 
 		return;
 	}
 
 	my ($nick, $host) = split(/!/, $from);
 	irclog($nick => sprintf "-%s(%s)- %s", $nick, $host, $msg);
-	printf "[%s] -%s(%s)- %s\n", print_time(), colour($nick, "95"),
-			colour($host, '35'), $msg unless $c->get('silent');
+	verbose_print(sprintf("-%s(%s)- %s", colour($nick, "95"), colour($host, '35'), $msg));
 }
 
 
@@ -1501,22 +1433,20 @@ sub on_connect {
 	
 	# Should we recover out nick?
 	if (defined $h->{nickrecover} && $h->{nickrecover} && $c->get('nspasswd')) {
-		printf "[%s] Nick taken. Reclaiming custody from services... ", print_time() unless $c->get('silent');
+		verbose_print "Nick taken. Reclaiming custody from services... ";
 		$irc->yield(privmsg => 'nickserv' => "GHOST ".$c->get('oldnick')." ".$c->get('nspasswd'));
 		$irc->yield(privmsg => 'nickserv' => "RECOVER ".$c->get('oldnick')." ".$c->get('nspasswd'));
 		$irc->yield(nick => $c->get('oldnick'));
 		$c->delete('oldnick');
-		printf "done!\n" unless $c->get('silent');
 	}
 	
 	if ($c->get('nspasswd')) {
-		printf "[%s] Identifying with services... ", print_time() unless $c->get('silent');
+		verbose_print "Identifying with services... ";
 		$irc->yield(privmsg => 'nickserv' => "IDENTIFY ".$c->get('nspasswd'));
-		printf "done!\n" unless $c->get('silent');
 	}
 	
 	irclog('status' => sprintf "Joining %s", $c->get('channel'));
-	printf "[%s] Joining %s...\n", print_time(), $c->get('channel') unless $c->get('silent');
+	verbose_print(sprintf("Joining %s...", $c->get('channel')));
 	$irc->yield(mode => $c->get('nick') => '+i');
 	$irc->yield(join => $c->get('channel'));
 	$irc->yield(mode => $c->get('channel'));
@@ -1533,8 +1463,7 @@ sub on_connected {
 	$_[HEAP]->{seen_traffic} = 1;
 	$kernel->delay(autoping => 300);
 	irclog('status' => sprintf "Connected to %s", $c->get('server'));
-	printf "[%s] %s!%s Connected to %s\n", print_time(), colour('-', '94'),
-		colour('-', '94'),  $c->get('server') unless $c->get('silent');
+	verbose_print(sprintf("Connected to %s", $c->get('server')));
 }
 
 ## on_join
@@ -1567,9 +1496,7 @@ sub on_join {
 
 	irclog($channel => sprintf "-!- %s [%s] has joined %s", $nick, $host,
 		$channel);
-	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." %s [%s] has joined %s\n", 
-		print_time(), colour($nick, '96'), colour($host, '96'), $channel
-		if $c->get('verbose');
+	verbose_print(sprintf("%s [%s] has joined %s", colour($nick, '96'), colour($host, '96'), $channel));
 }
 
 ## on_kill
@@ -1579,9 +1506,7 @@ sub on_kill {
 	my ($from, $reason) = @_[ARG0, ARG2];
 	my ($user, $host) = split(/!/, $from);
 	irclog('status' => sprintf "-!- You were killed by %s [%s] [%s]", $user, $host, $reason);
-	printf "[%s] %s!%s You were %s by %s [%s] [%s]\n", print_time, 
-		colour("-", 94), colour("-", 94), colour('killed', 91),
-		$user, $host, $reason unless Anna::Config->new->get('silent');
+	warn_print(sprintf("You were %s by %s [%s] [%s]", colour('killed', 91), $user, $host, $reason));
 }
 
 ## on_part
@@ -1615,13 +1540,10 @@ sub on_part {
 		$sth->execute(lc($nick), $msg);
 	}
 
-	#FIXME: Blargh... this almost makes me puke
-	$msg = '' unless defined($msg);
+	$msg ||= '';
 	
 	irclog($channel => sprintf "-!- %s has left %s [%s]", $nick, $channel, $msg);
-	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." %s has left %s [%s]\n", 
-		print_time(), $nick, colour($channel, "96"), $msg 
-		if $c->get('verbose');
+	verbose_print(sprintf("%s has left %s [%s]", $nick, colour($channel, "96"), $msg));
 }
 
 ## on_quit
@@ -1653,9 +1575,7 @@ sub on_quit {
 	$msg = '' if !defined($msg);
 
 	irclog('status' => sprintf "%s (%s) has quit IRC [%s]", $nick, $host, $msg);
-	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." %s (%s) has quit IRC [%s]\n",
-		print_time(), $nick, $host, $msg 
-		if Anna::Config->new->get('verbose');
+	verbose_print(sprintf("%s (%s) has quit IRC [%s]", $nick, $host, $msg));
 }
 
 ## on_nick
@@ -1691,8 +1611,7 @@ sub on_nick {
 	
 	# FIXME: find the channel in a supplied parameter to this function
 	irclog($c->get('channel') => sprintf "-!- %s is now known as %s", $nick, $newnick);
-	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." %s is now known as %s\n",
-		print_time(), $nick, $newnick if $c->get('verbose');
+	verbose_print(sprintf("%s is now known as %s", $nick, $newnick));
 }
 
 ## on_topic
@@ -1708,15 +1627,12 @@ sub on_topic {
 	
 	unless ($topic) {
 		irclog($channel => sprintf "-!- Topic unset by %s on %s", $nick, $channel);
-		printf "[%s] %s!%s Topic unset by %s on %s", print_time(), 
-			colour('-', '94'), colour('-', '94'), $nick, 
-			$channel if $c->get('verbose');
+		verbose_print(sprintf("Topic unset by %s on %s", $nick, $channel));
 		return;
 	}
 	
 	irclog($channel => sprintf "-!- %s changed the topic of %s to: %s", $nick, $channel, $topic);
-	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." %s changed the topic of %s to: %s\n",
-		print_time(), $nick, $channel, $topic if $c->get('verbose');
+	verbose_print(sprintf("%s changed the topic of %s to: %s", $nick, $channel, $topic));
 }
 
 
@@ -1733,15 +1649,11 @@ sub on_mode {
 
 	if (lc $to eq lc $c->get('nick')) {
 		irclog('status' => sprintf "-!- Mode change [%s] for user %s", $mode, $nick);
-		printf "[%s] %s!%s Mode change [%s] for user %s\n", 
-			print_time(), colour('-', '94'), colour('-', '94'), 
-			$mode, $nick if $c->get('verbose');
+		verbose_print(sprintf("Mode change [%s] for user %s", $mode, $nick));
 		return;
 	}
 	irclog($to => sprintf "-!- Mode/%s [%s] by %s", $to, $mode, $nick);
-	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." Mode/%s [%s] by %s\n", 
-		print_time(), colour($to, "96"), $mode, $nick 
-		if $c->get('verbose');
+	verbose_print(sprintf("Mode/%s [%s] by %s", colour($to, "96"), $mode, $nick));
 }
 
 ## on_disconnected
@@ -1751,8 +1663,7 @@ sub on_disconnected {
 	my ($kernel, $server) = @_[KERNEL, ARG0];
 
 	irclog('status' => sprintf "-!- Disconnected from %s", $server);
-	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." Disconnected from %s\n", 
-		print_time(), $server unless Anna::Config->new->get('silent');
+	warn_print(sprintf("Disconnected from %s", $server));
 	$kernel->yield("reconnect");
 }
 
@@ -1762,8 +1673,7 @@ sub on_disconnected {
 sub on_error {
 	my ($kernel, $error) = @_[KERNEL, ARG0];
 	irclog('status' => sprintf "-!- ERROR: %s", $error);
-	printf STDERR "[%s] ".colour("-", "94")."!".colour("-", "94")." ".error("ERROR:")." %s\n", 
-		print_time(), $error unless Anna::Config->new->get('silent');
+	error_print($error);
 }
 
 ## on_socketerr
@@ -1774,9 +1684,7 @@ sub on_socketerr {
 	my $c = new Anna::Config;
 
 	irclog('status' => sprintf "-!- Failed to establish connection to %s: %s", $c->get('server'), $error);
-	printf STDERR "[%s] %s!%s Failed to establish connection to %s: %s\n", 
-		print_time(), colour('-', '94'), colour('-', '94'), 
-		$c->get('server'), $error unless $c->get('silent');
+	error_print(sprint("Failed to establish connection to %s: %s", $c->get('server'), $error));
 	$kernel->yield("reconnect");
 }
 
@@ -1793,16 +1701,12 @@ sub on_kick {
 	if ($to eq $h->{irc}->nick_name) {
 		# We were kicked...
 		irclog('status' => sprintf "-!- Recieved KICK by %s from %s [%s]", $nick, $channel, $msg);
-		printf "[%s] ".colour("-", "94")."!".colour("-", "94")." Recieved KICK by %s from %s [%s]\n",
-			print_time(), $nick, $channel, $msg 
-			unless $c->get('silent');
+		warn_print(sprintf("Recieved KICK by %s from %s [%s]", $nick, $channel, $msg));
 		return;
 	}
 
 	irclog('status' => sprintf "-!- %s was kicked from %s by %s [%s]", $to, $channel, $nick, $msg);
-	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." %s was kicked from %s by %s [%s]\n", 
-		print_time(), colour($to, '96'), $channel, $nick, $msg 
-		if $c->get('verbose');
+	verbose_print(sprintf("%s was kicked from %s by %s [%s]", colour($to, '96'), $channel, $nick, $msg));
 }
 
 ## ABORT

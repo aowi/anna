@@ -287,7 +287,7 @@ sub debug_print {
 	return unless Anna::Config->new->get('debug');
 	my $msg = shift;
 	return unless ($msg);
-	print_formatted_message("[DEBUG] ".$msg);
+	print_formatted_message("[DEBUG] ".$msg) foreach(split("\n", $msg));
 }
 
 # sub: warn_print
@@ -301,7 +301,7 @@ sub debug_print {
 sub warn_print {
 	my $msg = shift;
 	return unless ($msg);
-	print_formatted_message("[WARNING] ".colour($msg, '93'));
+	print_formatted_message("[WARNING] ".colour($_, '93')) foreach(split("\n", $msg));
 }
 
 # sub: error_print
@@ -315,7 +315,7 @@ sub warn_print {
 sub error_print {
 	my $msg = shift;
 	return unless ($msg);
-	print_formatted_message("[ERROR] ".colour($msg, '91'));
+	print_formatted_message("[ERROR] ".colour($_, '91')) foreach(split("\n", $msg));
 }
 
 # sub: verbose_print
@@ -330,7 +330,7 @@ sub verbose_print {
 	return unless Anna::Config->new->get('verbose');
 	my $msg = shift;
 	return unless ($msg);
-	print_formatted_message($msg);
+	print_formatted_message($_) foreach(split("\n", $msg));
 }
 
 1;
