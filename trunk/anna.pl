@@ -3,8 +3,7 @@ use strict;
 use warnings;
 
 ## Anna^ IRC Bot
-
-# Version 0.30. Copyright (C) 2006-2007 Anders Ossowicki <and@vmn.dk>
+# Copyright (C) 2006-2008 Anders Ossowicki <and@vmn.dk>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,112 +19,21 @@ use warnings;
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-# Anna^ is a versatile IRC bot written in perl. Utilizing POE along with the 
-# IRC extension, Anna^ has a multitude of functions, including the ability to 
-# save small notes, quotes, haikus and more. She can also interact with various
-# websites, like google and bash.org. For more information, please see the 
-# included documentation, or read the comments in this file.
-
-# The name Anna^ comes from the horrible song, 'Boten Anna' by 
-# BassHunter. The correct name of the bot (according to the music video
-# is Anna^, and this is the name the bot will try to connect with. If 
-# that fails, she will try a number of variations of the name.
-# A number of functions are from an old, unreleased bot named kanako. 
-# Kanako was basically just a bunch of perlscripts for the IRC client irssi.
-
 # Questions, comments, general bitching, nude pics and beer goes to 
 # Anders Ossowicki <and@vmn.dk>.
 
-
-
 ## Set basic stuff like vars and the like up
-
-## Trap signals
-$SIG{'INT'} = 'ABORT';
-
-## Global vars
-
-# Locales for the script
-use constant STARTTIME		=> time;
-use constant SCRIPT_NAME 	=> "Anna^ IRC Bot";
-use constant SCRIPT_VERSION 	=> "0.40-svn";
-use constant SCRIPT_RELEASE 	=> "Thu May 17 17:02:20 CEST 2007";
-use constant SCRIPT_SYSTEM 	=> `uname -sr`;
-use constant DB_VERSION 	=> 2;
-
-# Server information
-our %server;
-$server{'server'} = "irc.blitzed.org";
-$server{'nick'}	= "Anna^";
-$server{'username'} = "anna";
-$server{'port'} = "6667";
-$server{'channel'} = "#frokostgruppen";
-$server{'name'} = "Boten Anna";
-$server{'nspasswd'} = "";
-
-
-# Misc settings
-our $dbfile = $ENV{'HOME'}."/.anna/anna.db"; # Database location
-our $colour = 1; # Print colours to the terminal?
-our $silent = 0; # Suppress all but critical output
-our $verbose = 0; # Print a lot of information
-our $trigger = "!"; # Trigger to prefix commands with
-our $debug = 0; # Enable or disable debugging
-our @bannedwords; # Array of banned words
-our $log = 1; # If true, make anna^ log activity
-our $voice_auth = 0; # If true, Anna^ will set +v on users that auths with her
-# The following two are used to determine rights to add stuff to Anna^'s 
-# database. require_ops takes precedence over require_voice, if both are set to
-# true.
-#our $require_ops = 0; # Require operator privs for some commands
-#our $require_voice = 0; # Require voice for some commands 
-
-## Read config-file (overrides default)
-# By making two seperate if-conditions, the values of /etc/anna.conf will be
-# overridden _if_, and only if, they are also set in ~/.anna/config. This 
-# seems to be the most failsafe method.
-if (-r "/etc/anna.conf") {
-	parse_configfile("/etc/anna.conf");
-}
-if (-r $ENV{'HOME'}."/.anna/config") {
-	parse_configfile($ENV{'HOME'}."/.anna/config");
-} 
-
-# Default values. These doesn't change during runtime
-my %default = %server;
-
-## Read command-line arguments (overrides config-file)
-use Getopt::Long qw(:config bundling);
-GetOptions(
-	'verbose|v!' => \$verbose,
-	'color!' => \$colour,
-	'server|s=s' => \$server{'server'},
-	'channel|c=s' => \$server{'channel'},
-	'nick|n=s' => \$server{'nick'},
-	'name|a=s' => \$server{'name'},
-	'username|u=s' => \$server{'username'},
-	'port|p=i' => \$server{'port'},
-	'nspasswd|P=s' => \$server{'nspasswd'},
-	'silent!' => \$silent,
-	'debug|d!' => \$debug,
-	'dbfile|D=s' => \$dbfile,
-	'version|V' => \&version,
-	'help|h|?' => sub { usage(0) }
-) or die( usage(1) );
-
-# Enable debug stuff
-if ($debug) {
-	use Data::Dumper;
-#	sub POE::Kernel::ASSERT_DEFAULT () { 1 }
-	sub POE::Kernel::TRACE_SIGNALS ()  { 1 }
-}
-
-# Make verbose override silent
-if (($verbose) && ($silent)) {
-	$silent = undef;
-}
-
-# use the rest of the modules
+use lib "lib";
+use Anna::Utils;
+use Anna::Debug qw(_default);
+use Anna::Config;
+use Anna::Output qw(irclog);
+use Anna::Connection;
+use Anna::Log;
+use Anna::CTCP;
+use Anna::DB;
+use Anna::Module;
+use Data::Dumper; # TO BE REMOVED
 use File::Copy;
 use Term::ReadKey;
 use POE;
@@ -134,73 +42,120 @@ use DBI;
 use LWP::UserAgent;
 use HTML::Entities;
 
+## Trap signals
+$SIG{'INT'} = 'ABORT';
+
+# Clean out remnants from last session
+#Anna::Config::empty_db;
+#Anna::Module::empty_db;
+
+my $config = new Anna::Config(
+#	server		=> "irc.blitzed.org",
+#	nick		=> "Anna^",
+#	username	=> "anna",
+#	port		=> 6667,
+#	channel		=> "#frokostgruppen",
+#	name		=> "Boten Anna",
+#	dbfile		=> $ENV{'HOME'}."/.anna/anna.db",
+#	colour		=> 1,
+#	trigger		=> "!",
+#	debug		=> 0,
+#	log		=> 1
+);
+
+## Read config-file (overrides default)
+# By making two seperate if-conditions, the values of /etc/anna.conf will be
+# overridden _if_, and only if, they are also set in ~/.anna/config. This 
+# seems to be the most failsafe method.
+$config->parse_configfile("/etc/anna.conf") if (-r "/etc/anna.conf");
+$config->parse_configfile($ENV{'HOME'}."/.anna/config") if (-r $ENV{'HOME'}."/.anna/config");
+
+
+# Capture temporary vars.
+{
+	my %conf;
+	## Read command-line arguments (overrides config-file)
+	use Getopt::Long qw(:config bundling);
+	GetOptions(
+		'verbose|v!' => \$conf{'verbose'},
+		'color!' => \$conf{'colour'},
+		'server|s=s' => \$conf{'server'},
+		'channel|c=s' => \$conf{'channel'},
+		'nick|n=s' => \$conf{'nick'},
+		'name|a=s' => \$conf{'name'},
+		'username|u=s' => \$conf{'username'},
+		'port|p=i' => \$conf{'port'},
+		'nspasswd|P=s' => \$conf{'nspasswd'},
+		'silent!' => \$conf{'silent'},
+		'debug|d!' => \$conf{'debug'},
+		'dbfile|D=s' => \$conf{'dbfile'},
+		'version|V' => sub { version(0) },
+		'help|h|?' => sub { usage(0) }
+	) or die( usage(1) );
+	foreach (keys %conf) {
+		$config->set($_, $conf{$_}) if (defined $conf{$_});
+	}
+}
+
+# Enable debug stuff
+if ($config->get('debug')) {
+	eval { use Data::Dumper; };
+	if ($@) {
+		print "Please install module Data::Dumper if you want to run Anna^ in debugging mode\n";
+		$config->toggle('debug');
+	} else {
+#		sub POE::Kernel::ASSERT_DEFAULT () { 1 }
+#		sub POE::Kernel::TRACE_SIGNALS ()  { 1 }
+	}
+}
+
+# Make verbose override silent
+$config->delete('silent') if ($config->get('verbose') && $config->get('silent'));
+
 ## Done with basic setup
 
 # Print welcome
-if (!$silent) {
-	printf "%s version %s, Copyright (C) 2006 Anders Ossowicki\n", 
-		SCRIPT_NAME, SCRIPT_VERSION;
-	printf "%s comes with ABSOLUTELY NO WARRANTY; for details, see LICENSE.\n", SCRIPT_NAME;
-	printf "This is free software, and you are welcome to redistribute it under certain conditions\n";
-}
-if ($server{'nspasswd'} ne $default{'nspasswd'}) {
-	# nspasswd was changed from commandline, warn user and correct default 
-	# values
-	print warning("Warning: Typing your NickServ password on the command-line is unsafe!\n") if (!$silent);
-	$default{'nspasswd'} = $server{'nspasswd'};
-}
+version() unless $config->get('silent');
 
 # Check for first-run
-if (!(-e $dbfile)) {
+if (!(-e Anna::Utils->CONFIGDIR."/anna.db")) {
 	# First run
+	my $dbf = Anna::Utils->CONFIGDIR."/anna.db";
 	print "This seems to be the first time you're running Anna^... welcome!\n";
-	print "Creating ~/.anna directory to store information... " if ($verbose);
-	mkdir $ENV{'HOME'}."/.anna" or die(error("\nFailed to create ~/.anna/ directory. $!"));
-	print "done!\n" if ($verbose);
+	unless (-e $ENV{'HOME'}."/.anna") {
+		print "Creating ~/.anna directory structure to store information... " 
+			if ($config->get('verbose'));
+		mkdir $ENV{'HOME'}."/.anna" or die "\nFailed to create ~/.anna/ directory. $!";
+		mkdir $ENV{'HOME'}."/.anna/registry" or die "\nFailed to create ~/.anna/registry directory. $!";
+		print "done!\n" if ($config->get('verbose'));
+	}
 	# Copy database to home
-	print "Creating database for Anna^ and filling it... " if ($verbose);
-	copy("/usr/local/share/anna/anna.db", $dbfile) or die(error("\nFailed to copy /usr/local/share/anna/anna.db to $dbfile: $!"));
-	print "done\n" if ($verbose);
-	# Copy config to locale
-	print "Creating standard configuration file in ~/.anna/config... " if($verbose);
-	copy("/etc/anna.conf", $ENV{'HOME'}."/.anna/config") or die(error("Failed to copy /etc/anna.conf to ~/.anna/config: $!"));
-	print "done\n" if ($verbose);
+	print "Creating database for Anna^ and filling it... " if ($config->get('verbose'));
+	copy("/usr/local/share/anna/anna.db", $dbf) 
+		or die "\nFailed to copy /usr/local/share/anna/anna.db to $dbf: $!";
+	print "done\n" if ($config->get('verbose'));
+	unless (-e $ENV{'HOME'}."/.anna/config") {
+		# Copy config to locale
+		print "Creating standard configuration file in ~/.anna/config... " 
+			if ($config->get('verbose'));
+		copy("/etc/anna.conf", $ENV{'HOME'}."/.anna/config") 
+			or die "Failed to copy /etc/anna.conf to ~/.anna/config: $!";
+		print "done\n" if ($config->get('verbose'));
+	}
 	create_rootuser();
 	print "You're all set!\n";
 }
 
-print "Creating connection to irc server: $server{'server'}... "  if ($verbose);
-my $irc = POE::Component::IRC->spawn(ircname 	=> $server{'name'},
-				     port	=> $server{'port'},
-				     username	=> $server{'username'},
-				     server	=> $server{'server'},
-				     nick	=> $server{'nick'},
-				     debug	=> $debug
-				    ) or die(error("\nCan't create connection to $server{'server'}"));
-print "done!\n" if ($verbose);
-
-print "Connecting to SQLite database $dbfile... " if ($verbose);
-# Test if database exists
-if (!(-e $dbfile)) {
-	# We _could_ recover by copying over the default database, but that 
-	# might not be what the user wants 
-	die(error("\nCouldn't find SQLite database file: ".$dbfile.".\nPlease check that the file exists and is readable\n"));
-
+# Do we have sufficient configuration to create a connection?
+unless ($config->exists('name') && $config->exists('username') && $config->exists('port') && $config->exists('server')  && $config->exists('nick')) {
+	print "All of the following variables must be set. Bailing out:\n";
+	for(qw(name nick username server port)) {
+		printf("%8s: ", $_);
+		$config->exists($_) ? print $config->get($_)."\n" : print "\n";
+	}
+	print "Please update your configuration file with the missing parameters\n";
+	exit 1;
 }
-my $dbh = DBI->connect("dbi:SQLite:dbname=".$dbfile, 
-			undef, 
-			undef, 
-			{
-				PrintError	=> 0, 
-				PrintWarn	=> 0,
-				RaiseError	=> 0,
-				AutoCommit	=> 1 
-			}
-		      ) or die(error("Can't connect to SQLite database $dbfile: $DBI::errstr"));
-print "done!\n" if ($verbose);
-
-# Syncronize the database (update if version doesn't match script)
-sync_db();
 
 # Create POE Session
 POE::Session->create(
@@ -258,83 +213,80 @@ POE::Session->create(
 		irc_433			=> \&err_nick_taken,  # nicknameinuse
 
 		# Dummy stuff (we don't care about)
+		_child			=> sub { "DUMMY" },
 		irc_isupport		=> sub { "DUMMY" },
 		irc_ping		=> sub { "DUMMY" },
 		irc_registered		=> sub { "DUMMY" },
+		irc_plugin_add		=> sub { "DUMMY" },
+		irc_plugin_del		=> sub { "DUMMY" },
 	},
 );
 
 ## Go for it!
+$poe_kernel->alias_set('irc');
 $poe_kernel->run();
 
 # Sayoonara
-print "[%s] Closing down... ", print_time() if (!$silent);
+printf "[%s] Closing down... ", print_time() unless $config->get('silent');
 
-# Disconnect from database
-$dbh->disconnect or warn("Couldn't disconnect from database: $dbh->errstr") if ($dbh);
 
-print "sayoonara\n" if (!$silent);
+print "sayoonara\n" unless $config->get('silent');
 exit(0);
 
 ## _start
 # Called when POE start the session. Take care of connecting, joining and the like
 sub _start {
 	my ($kernel, $heap, $session) = @_[KERNEL, HEAP, SESSION];
-	irclog('status' => sprintf "-!- Log opened %s", scalar localtime);
-	printf "[%s] %s!%s Registering for all events... ", print_time(), 
-		colour('-', '94'), colour('-', '94') if (!$silent);
+
+	# Connect to database
+	printf("Connecting to SQLite database %s...", Anna::Utils->CONFIGDIR."/anna.db") 
+		if ($config->get('verbose'));
+	
+	my $dbh = new Anna::DB or die "Couldn't connect to SQLite DB";
+	print "done!\n" if ($config->get('verbose'));
+	# Syncronize the database (update if version doesn't match script)
+	Anna::DB::sync($dbh);
+
+	# Create IRC-connection object
+	printf("Creating connection to irc server: %s...", $config->get('server')) 
+		if $config->get('verbose');
+	my $irc = POE::Component::IRC->spawn(
+		ircname		=> $config->get('name'),
+		port		=> $config->get('port'),
+		username	=> $config->get('username'),
+		server		=> $config->get('server'),
+		nick		=> $config->get('nick'),
+		debug		=> $config->get('debug')
+	) or die(error("\nCan't create connection to ".$config->get('server')));
 	$irc->yield(register => 'all');
-	printf "done\n" if (!$silent);
-#	irclog('status' => sprintf "-!- Connecting to irc server: %s:%d...", $server{'server'}, $server{'port'});
-#	printf "[%s] %s!%s Connecting to irc server: %s:%d...\n", print_time(), 
-#		colour('-', '94'), colour('-', '94'), $server{'server'}, 
-#		$server{'port'} if (!$silent);
+	print "done!\n" if ($config->get('verbose'));
+
+	# Create logfile
+	my $log = new Anna::Log(
+		format	=> 'service',
+		name	=> 'core',
+		heap	=> \$heap
+	);
+		
+	# Get stuff into the heap
+	$heap->{log} = $log;
+	$heap->{irc} = $irc;
+
+#	Anna::Module::load('answer') or die "Failed loading module answer";	
+#	Anna::Module::load('lart') or die "Failed loading module lart";	
+#	Anna::Module::load('qms') or die "Failed loading module qms";
+	Anna::Module::loaddir($ENV{'HOME'}."/.anna/modules/core/");
+	Anna::Module::loaddir($ENV{'HOME'}."/.anna/modules/auto/");
 	# Connect
 	$kernel->yield("connect");
 }
 
-## _default 
-# Handler for all unhandled events. This produces some debug info
-# Don't ask about "@{$args->[2]}"
-# NOT TO BE INCLUDED IN RELEASES!
-sub _default {
-	my ($event, $args) = @_[ARG0 .. $#_];
-	
-	$_[HEAP]->{seen_traffic} = 1 if ($event =~ /irc_.+/);
-	return 0 if (!$debug);	
-	# Handle numeric events. These seems to follow a certain syntax.
-	if ($event =~ /irc_(\d\d\d)/) {
-		irclog('status' => sprintf "(%s) %s", $1, "@{$args->[2]}");
-		printf "[%s] ".colour('-', 94)."!".colour('-', 94)." (%s) %s\n",
-			print_time(), $1, "@{$args->[2]}" if ($verbose);
-		return 0;
-	}
-	
-	my @output = ( "$event: " );
-	print "\n\n========================DEBUG INFO===========================\n";
-	foreach my $arg ( @$args ) {
-		if ( ref($arg) eq 'ARRAY' ) {
-			push( @output, "[" . join(" ,", @$arg ) . "]" );
-		} else {
-			push ( @output, "'$arg'" );
-		}
-	}
-	irclog('status' => join ' ', @output);
-	print STDOUT join ' ', @output, "\n";
-	print "\n=================WE NOW RETURN TO SCHEDULE===================\n\n";
-	return 0;
-}
-
-## version
-# Print version and exit
-sub version {
-	printf "%s version %s. Released under the GNU GPL\n", SCRIPT_NAME, SCRIPT_VERSION;
-        exit(0);
-}
 
 sub create_rootuser {
-	print "You will need a root user to control Anna^ from within IRC: Please create one now:\n";
+	my $config = new Anna::Config;
+	print "You will need a root user to control Anna^ from within IRC. Please create one now:\n";
 	my $newroot;
+	my $dbh = new Anna::DB or die $DBI::errstr;
 	do {
 		print "Username: ";
 		chomp($newroot = ReadLine(0));
@@ -352,312 +304,15 @@ sub create_rootuser {
 	ReadMode(1); # Restore
 	# The additional \n's are for ReadMode-restoration
 	print "\nCreating root user... ";
-	my $db_conn = DBI->connect("dbi:SQLite:dbname=".$dbfile,undef,undef, {AutoCommit => 1}) 
-			or die("Error - couldn't connect to database $dbfile: $DBI::errstr");
-	my $query = "INSERT INTO users (username, password, admin) VALUES (?, ?, 1)";
+	my $query = q{
+		INSERT INTO users (username, password, admin) 
+		VALUES (?, ?, 1)
+	};
 	my @salt_chars = ('a'..'z','A'..'Z','0'..'9');
 	my $salt = $salt_chars[rand(63)] . $salt_chars[rand(63)];
-	die error("\nFailed to create root user:".$DBI::errstr."\n") unless $db_conn->do($query, undef, $newroot, crypt($newpasswd, $salt),);
-	$db_conn->disconnect() or warn("Error - couldn't disconnect from database $dbfile: $DBI::errstr");
+	$dbh->do($query, undef, $newroot, crypt($newpasswd, $salt))
+		or die error("\nFailed to create root user:".$DBI::errstr."\n"); 
 	print "done\n";
-}
-
-## sync_db
-# Syncronize database with script version
-sub sync_db {
-	# Check database version. sqlite_master contains a list of all tables.
-	my $query = "SELECT * FROM sqlite_master WHERE type = ? AND name = ?";
-	my $sth = $dbh->prepare($query);
-	$sth->execute("table", "admin");
-	if ($sth->fetchrow()) {
-		# Okay, admin table exists, fetch database version
-		$query = "SELECT * FROM admin WHERE option = ?";
-		$sth = $dbh->prepare($query);
-		$sth->execute("db_version");
-		my @row = $sth->fetchrow();
-		return if ($row[1] == DB_VERSION);
-		if ($row[1] eq "1") {
-			# Upgrades from 1->DB_VERSION
-			printf "Upgrading database from version 1 to %s\n", DB_VERSION if ($verbose);
-			copy($dbfile, $dbfile."_bak") or die("Failed during backup of database: $!");
-			$query = "ALTER TABLE users ADD COLUMN op INT";
-			$sth = $dbh->prepare($query);
-			$sth->execute();
-			$query = "ALTER TABLE users ADD COLUMN admin INT";
-			$sth = $dbh->prepare($query);
-			$sth->execute();
-			create_rootuser();
-			$query = "UPDATE admin SET value = ? WHERE option = ?";
-			$sth = $dbh->prepare($query);
-			$sth->execute('2', 'db_version');
-			# Upgrade succeded, delete backup
-			unlink($dbfile."_bak") or warn("Failed to unlink database backup: $!");
-		}
-	} else {
-		# System is too old... we only support 0.2x, so update from 
-		# that (version 0 -> 2)
-		printf "Your database is out of date. Performing updates... \n" if ($verbose);
-		# Make a backup copy
-		copy($dbfile, $dbfile."_bak") or die("Failed during backup of database: $!");
-		# TODO: Inform user of backup copy in case of failure and delete it in case of success
-
-		# Create admin table
-		$query = "CREATE TABLE admin (option VARCHAR(255), value VARCHAR(255))";
-		$sth = $dbh->prepare($query);
-		$sth->execute();
-
-		# Create notes table
-		$query = "CREATE TABLE notes (id INTEGER PRIMARY KEY UNIQUE, word TEXT, answer TEXT, author TEXT, date INTEGER)";
-		$sth = $dbh->prepare($query);
-		$sth->execute();
-
-		# Create orders table
-		$query = "CREATE TABLE orders (id INTEGER PRIMARY KEY UNIQUE, key TEXT, baka_order TEXT)";
-		$sth = $dbh->prepare($query);
-		$sth->execute();
-		
-		my @order_keys = ("coffee", "chimay", "pepsi", "ice cream", "beer", "peanuts", "ice");
-		my @order_values = (
-			"hands ## a steaming cup of coffee",
-			"hands ## a glass of Chimay",
-			"gives ## a can of Star Wars pepsi",
-			"gives ## a chocolate ice cream with lots of cherries",
-			"slides a beer down the bar counter to ##",
-			"slides the bowl of peanuts down the bar counter to ##",
-			"slips two ice cubes down ##'s neck",
-		);
-		$query = "INSERT INTO orders (key, baka_order) VALUES (?, ?)";
-		$sth = $dbh->prepare($query);
-		# FIXME: We ought to check the tuples... oh well
-		$sth->execute_array({ ArrayTupleStatus => undef}, \@order_keys, \@order_values);
-
-		# Create roulette_stats
-		$query = "CREATE TABLE roulette_stats (id INTEGER PRIMARY KEY UNIQUE, user TEXT UNIQUE, shots INTEGER, hits INTEGER, deathrate TEXT, liverate TEXT)";
-		$sth = $dbh->prepare($query);
-		$sth->execute();
-		
-		# Add op & admin columns to users table
-		$query = "ALTER TABLE users ADD COLUMN op INT";
-		$sth = $dbh->prepare($query);
-		$sth->execute();
-		$query = "ALTER TABLE users ADD COLUMN admin INT";
-		$sth = $dbh->prepare($query);
-		$sth->execute();
-		create_rootuser();
-		# Update db_version field
-		$query = "INSERT INTO admin (option, value) VALUES (?, ?)";
-		$sth = $dbh->prepare($query);
-		$sth->execute("db_version", 2);
-		# Upgrade succeded, delete backup
-		unlink($dbfile."_bak") or warn("Failed to unlink database backup: $!");
-		printf "Your database is up to speed again!\n" if ($verbose);
-	}
-}
-	
-## usage
-# Print usage information
-sub usage {
-my $sig = shift;
-print <<EOUSAGE;
-Anna^ IRC Bot version @{[ SCRIPT_VERSION ]} 
-Usage: anna [OPTION]...
-
-Mandatory arguments to long options are mandatory for short options too.
-  -a, --name <name>             set the realname of the bot. This is not the
-				nickname!
-  -c, --channel <channel>	set the channel to join.
-  -s, --server <server>		set the server to connect to.
-  -n, --nick <nick>		set the nickname of the bot. Default is Anna^
-  -u, --username <user>		set the username of the bot.
-  -p, --port <port>		set the port to connect to. Default is 6667
-  -P, --nspasswd <passwd>	authorize with nickserv using <passwd> upon
-				successful connection.
-
-      --no-color		don't use colours in terminal.
-  -D, --dbfile <file>		specify the SQLite3 database-file.
-  -v, --verbose			print verbose information.
-      --silent			print nothing except critical errors.
-  -V, --version			print version information and exit.
-  -h, --help			show this message.
-
-Note:   specifying your nickserv password on the command-line is unsafe. You
-	should set it in the file instead.
-All options listed here can be set within the file or from the configuration 
-file as well.
-
-Anna^ IRC Bot is a small and versatile IRC-bot with various functionality.
-Please report bugs to and\@vmn.dk
-
-EOUSAGE
-	exit($sig);
-}
-
-## parse_configfile
-# Parse the configfile (given as argument)
-sub parse_configfile {
-	return if (!($_[0]));
-	my $file = shift;
-	open(CFG, "<".$file) or die(error("Can't open configuration file ".$file.": ".$!));
-	while(<CFG>) {
-		next if (/^#/);
-		next if (/^\[/);
-		next if (/^$/);
-		if (/^(.*?)\s*=\s*(.*)$/) {
-
-			# Server part
-			$server{'server'} = $2 if (lc($1) eq 'server');
-			$server{'port'} = $2 if (lc($1) eq 'port');
-			$server{'nick'} = $2 if (lc($1) eq 'nickname');
-			$server{'username'} = $2 if (lc($1) eq 'username');
-			$server{'channel'} = $2 if (lc($1) eq 'channel');
-			$server{'name'} = $2 if (lc($1) eq 'ircname');
-			$server{'nspasswd'} = $2 if (lc($1) eq 'nspasswd');
-
-			# Script part
-			$dbfile = $2 if (lc($1) eq 'dbfile');
-			$colour = $2 if (lc($1) eq 'colour');
-			$silent = $2 if (lc($1) eq 'silent');
-			$verbose = $2 if (lc($1) eq 'verbose');
-			$log = $2 if (lc($1) eq 'logging');
-
-			# Bot part
-			$trigger = $2 if (lc($1) eq 'trigger');
-			@bannedwords = split(' ', $2) if (lc($1) eq 'bannedwords');
-			$voice_auth = $2 if (lc($1) eq 'voice_auth');
-#			$require_ops = $2 if (lc($1) eq 'require op');
-#			$require_voice = $2 if (lc($1) eq 'require voice');
-		} else {
-			print warning("Syntax error in configuration file (".$file.") line ".$.) unless ($silent);
-		}
-	}
-	close(CFG);
-}
-
-## error
-# Return the colour-coded error message
-sub error {
-	my $error = shift;
-	# TODO: NOT a good solution, but worksfornow
-	return $error if (!-t STDERR);
-	return colour($error, "91");
-}
-
-## warning
-# Return the colour-coded warning
-sub warning {
-	my $warning = shift;
-	return colour($warning, "93");
-}
-
-## irclog
-# Manages logging. Takes two params, the level of what is being logged and the
-# actual message to log. Two level are possible, #channel and 'status'. 
-# #channel is for everything said in channel and status is for everything 
-# printed in the status window.
-sub irclog {
-	return if (@_ != 2);
-	my ($target, $msg) = @_;
-
-	if (!(-e $ENV{'HOME'}."/.anna/logs")) {
-		mkdir $ENV{'HOME'}."/.anna/logs" or die("Can't create directory: $!");
-	}
-	
-	# Use lowercase
-	$target = lc($target);
-
-	if ($target eq 'status') {
-		open(LOG, ">> $ENV{'HOME'}/.anna/logs/anna.log") or die("Can't open logfile: $!");
-		printf LOG "%s %s\n", print_time(), $msg;
-		close(LOG);
-	} else {
-		my $network = $server{'server'};
-		$network =~ s/.*\.(.*)\..*/$1/;
-		if (!(-e $ENV{'HOME'}."/.anna/logs/".$network)) {
-			mkdir $ENV{'HOME'}."/.anna/logs/".$network or die("Can't create directory: $!");
-		}
-		open(LOG, ">> $ENV{'HOME'}/.anna/logs/$network/$target.log") or die("Can't open logfile: $!");
-		printf LOG "%s %s\n", print_time(), $msg;
-		close(LOG);
-	}
-}
-
-## trim
-# Trims whitespace from start and end of input
-sub trim {
-	my $string = shift;
-	$string =~ s/^\s+//;
-	$string =~ s/\s+$//;
-	return $string;
-}
-
-## ltrim
-# Trim leading whitespace from input
-sub ltrim {
-	my $string = shift;
-	$string =~ s/^\s+//;
-	return $string;
-}
-
-## rtrim
-# Trim trailing whitespace from input
-sub rtrim {
-	my $string = shift;
-	$string =~ s/\s+$//;
-	return $string;
-}
-
-## colour
-# Colourize a string if $colour is set.
-# Takes two arguments, the string to be coloured and the colourcode
-sub colour {
-	return if ((!$_[1]) or (!$_[0]));
-	# Check if stdout is a tty. We probably need something better than this
-	return $_[0] if (!-t STDOUT);
-	return "\e[" . $_[1] . "m" . $_[0] . "\e[00m" if ($colour);
-	return $_[0];
-}
-
-## print_time
-# This returns a nicely formatted string with the current time. Useful 
-# to attach a timestamp to output.
-sub print_time {
-	my ($sec,$min,$hour,$mday,$mon,$year,
-	          $wday,$yday,$isdst) = localtime time;
-	if (length($hour) == 1) {
-		$hour = "0".$hour;
-	}
-	if (length($min) == 1) {
-		$min = "0".$min;
-	}
-	if (length($sec) == 1) {
-		$sec = "0".$sec;
-	}
-	
-	my $time = $hour . ":" . $min . ":" . $sec;
-	return $time;
-}
-
-## calc_diff
-# Calculates the difference between two unix times and returns
-# a string like '15d 23h 42m 15s.'
-sub calc_diff {
-	my ($when) = @_;
-	my $diff = (time() - $when);
-	my $day = int($diff / 86400); $diff -= ($day * 86400);
-	my $hrs = int($diff / 3600); $diff -= ($hrs * 3600);
-	my $min = int($diff / 60); $diff -= ($min * 60);
-	my $sec = $diff;
-	
-	return "${day}d ${hrs}h ${min}m ${sec}s";
-}
-
-## escape_shell
-# Escape a string for shell output
-sub escape_shell {
-	my $out = shift;
-	return if (!$out);
-	$out =~ s/([;<>\*\|`&\$!#\(\)\[\]\{\}:'"])/\\$1/g;
-	return $out;
 }
 
 ## parse_message
@@ -670,10 +325,26 @@ sub escape_shell {
 sub parse_message {
 	my ($kernel, $heap, $from, $to, $msg, $type) = @_;
 	my ($nick, $host) = split(/!/, $from);
+	my $c = new Anna::Config;
+	my $trigger = $c->get('trigger');
+	my $botnick = $c->get('nick');
+
 	# Trim whitespace. This shouldn't give any trouble.
 	$msg = trim($msg);
 	
 	my $out = 'FALSE';
+	
+	my $target;
+	if ($type eq 'public') {
+		# Sent to a channel, so this is default return target
+		$target = $c->get('channel');
+	} else {
+		$target = $nick;
+	}
+	
+	# Check for module-bound commands
+	Anna::Module::execute($msg, $heap, $target, $nick, $host, $type) 
+		or die "Died while executing $msg.";
 
 	if ($type eq "public") {
 		# Public message (to a channel)
@@ -682,15 +353,15 @@ sub parse_message {
 		
 		# Lastseen part
 		if ($msg !~ /^!seen .*$/) {
-			bot_lastseen_newmsg($nick, $msg);
+			bot_lastseen_newmsg($heap, $nick, $msg);
 		}
 		# Only follow karma in channels
 		if ($msg =~ /^(.+)(\+\+|\-\-)$/) {
-			$out = bot_karma_update($1, $2, $nick);
+			$out = bot_karma_update($heap, $1, $2, $nick);
 		}
-		foreach (@bannedwords) {
-			if ($msg =~ /($_)/i) {
-				$irc->yield(kick => $server{'channel'} => $nick => $1);
+		foreach ($c->get('bannedwords')) {
+			if ($msg =~ /$_/i) {
+				$heap->{irc}->yield(kick => $c->get('channel') => $nick => $_);
 			}
 		}
 	} elsif ($type eq "msg") {
@@ -698,20 +369,20 @@ sub parse_message {
 		# This is meant for things that anna should _only_
 		# respond to in private (ie. authentications).
 		if ($msg =~ /^(\Q$trigger\E|)auth\s+(.*)$/) {
-			$out = bot_auth($2, $from, $heap);
+			$out = bot_auth($heap, $2, $from);
 		} elsif ($msg =~ /^(\Q$trigger\E|)register\s+(.*?)\s+(.*)$/) {
-			$out = bot_register($2, $3, $from, $heap);
+			$out = bot_register($heap, $2, $3, $from);
 		} elsif ($msg =~ /^(\Q$trigger\E|)op$/i) {
-			$out = bot_op($from, $heap);
+			$out = bot_op($heap, $from);
 		} elsif ($msg =~ /^(\Q$trigger\E|)addop\s+(.*)$/) {
-			$out = bot_addop($2, $from, $heap);
+			$out = bot_addop($heap, $2, $from);
 		} elsif ($msg =~ /^(\Q$trigger\E|)rmop\s+(.*)$/) {
-			$out = bot_rmop($2, $from, $heap);
+			$out = bot_rmop($heap, $2, $from);
 		}
 	}
 	
 	## This part reacts to special words/phrases in the messages
-	if ($msg =~ /^\Q$server{'nick'}\E[ :,-].*poke/i) {
+	if ($msg =~ /^\Q$botnick\E[ :,-].*poke/i) {
 		$out = "Do NOT poke the bot!";
 		return $out;
 	}
@@ -725,90 +396,78 @@ sub parse_message {
 		return $out;
 	}
 	if ($msg =~ /dance/i) {
-		$irc->delay(['ctcp' => $server{'channel'} => 'ACTION dances o//'], 1);
-		$irc->delay(['ctcp' => $server{'channel'} => 'ACTION dances \\\\o'], 2);
-		$irc->delay(['ctcp' => $server{'channel'} => 'ACTION DANCES \\o/'], 3);
+		$heap->{irc}->delay(['ctcp' => $c->get('channel') => 'ACTION dances o//'], 1);
+		$heap->{irc}->delay(['ctcp' => $c->get('channel') => 'ACTION dances \\\\o'], 2);
+		$heap->{irc}->delay(['ctcp' => $c->get('channel') => 'ACTION DANCES \\o/'], 3);
 		return;
 	}
 		
-	if ($msg =~ /^\Q$trigger\Edice (\d+d\d+)$/i) {
-		$out = bot_dice($1, $nick);
-		return $out;
-	}
-	if ($msg =~ /^(\d+d\d+)$/i) {
-		$out = bot_dice($1, $nick);
-		return $out;
-	}
-	
-	if ($msg =~ /^\Q$server{'nick'}\E[ :,-]+(.*)\s+or\s+(.*)\?$/) {
-		my @rep = ($1,$2);
-		return $nick . ": ".$rep[rand scalar @rep]."!";
-	}
+#	if ($msg =~ /^\Q$trigger\Edice (\d+d\d+)$/i) {
+#		$out = bot_dice($1, $nick);
+#		return $out;
+#	}
 
-	if ($msg =~ /^\Q$server{'nick'}\E[ :,-]+.*\?$/) {
+#	if ($msg =~ /^(\d+d\d+)$/i) {
+#		$out = bot_dice($1, $nick);
+#		return $out;
+#	}
+	
+	if ($msg =~ /^\Q$botnick\E[ :,-]+(.*)\s+or\s+(.*)\?$/) {
+		my @rep = ($1,$2);
+		return $nick . ": ".$rep[rand(2)]."!";
+	}
+=cut out until regexp bindings are implemented
+	if ($msg =~ /^\Q$botnick\E[ :,-]+.*\?$/) {
 		$out = $nick . ": ".bot_answer();
 		return $out;
 	}
+=cut back
 
 	# Return now, unless there's a trigger
 	# In case of a trigger, trim it and parse the remaining message
-	return $out if ($msg !~ /^(\Q$trigger\E|\Q$server{'nick'}\E[ :,-]+)/);
+	return $out if ($msg !~ /^(\Q$trigger\E|\Q$botnick\E[ :,-]+)/);
 	my $cmd = $msg;
-	$cmd =~ s/^(\Q$trigger\E|\Q$server{'nick'}\E[ :,-]+\s*)//;
+	$cmd =~ s/^(\Q$trigger\E|\Q$botnick\E[ :,-]+\s*)//;
+	
+
+
 
 	## Bot commands
-	if ($cmd =~ /^mynotes$/) {
-		$out = bot_mynotes($nick, $type);
-	} elsif ($cmd =~ /^voice(me|)$/) {
-		$out = bot_voice($from, $heap);
+	
+	if ($cmd =~ /^voice(me|)$/) {
+		$out = bot_voice($heap, $from);
 	} elsif ($cmd =~ /^rstats$/) {
-		$out = bot_roulette_stats();
+		$out = bot_roulette_stats($heap);
 	} elsif ($cmd =~ /^search\s+(.*)$/) {
-		$out = bot_search($1);
+		$out = bot_search($heap, $1);
 	} elsif ($cmd =~ /^rot13\s+(.*)$/i) {
-		$out = bot_rot13($1);
-	} elsif ($cmd =~ /^note(\s+(.*)|)$/i) {
-		$out = bot_note($2, $nick);
+		$out = bot_rot13($heap, $1);
 	} elsif ($cmd =~ /^google\s+(.*)$/i) {
-		$out = bot_googlesearch($1);
+		$out = bot_googlesearch($heap, $1);
 	} elsif ($cmd =~ /^fortune(\s+.*|)$/i) {
-		$out = bot_fortune($1);
+		$out = bot_fortune($heap, $1);
 	} elsif ($cmd =~ /^karma\s+(.*)$/i) {
-		$out = bot_karma($1);
+		$out = bot_karma($heap, $1);
 	} elsif ($cmd =~ /^quote$/i) {
-		$out = bot_quote();
+		$out = bot_quote($heap);
 	} elsif ($cmd =~ /^addquote\s+(.*)$/i) {
-		$out = bot_addquote($nick, $1);
-	} elsif ($cmd =~ /^bash(\s+(\#|)([0-9]+|random)|)$/i) {
-		$out = bot_bash($3);
+		$out = bot_addquote($heap, $nick, $1);
 	} elsif ($cmd =~ /^roulette$/i) {
-		$out = bot_roulette($nick);
+		$out = bot_roulette($heap, $nick);
 	} elsif ($cmd =~/^reload$/i) {
-		$out = bot_reload();
-	} elsif ($cmd =~ /^question\s+.*$/i) {
-		$out = $nick . ": ".bot_answer();
-	} elsif ($cmd =~ /^addanswer\s+(.*)$/i) {
-		$out = bot_addanswer($1, $nick);
+		$out = bot_reload($heap);
 	} elsif ($cmd =~ /^up(time|)$/i) {
-		$out = bot_uptime();
-	} elsif ($cmd =~ /^lart\s+(.*)$/i) {
-		$out = bot_lart($nick, $1);
-	} elsif ($cmd =~ /^addlart\s+(.*)$/i) {
-		$out = bot_addlart($1);
-	} elsif ($cmd =~ /^haiku$/i) {
-		$out = bot_haiku();
-	} elsif ($cmd =~ /^addhaiku\s+(.*)$/i) {
-		$out = bot_addhaiku($1, $nick);
+		$out = bot_uptime($heap);
 	} elsif ($cmd =~ /^addorder\s+(.*)$/i) {
-		$out = bot_addorder($1, $nick);
+		$out = bot_addorder($heap, $1, $nick);
 	} elsif ($cmd =~ /^order\s+(.*)$/i) {
-		$out = bot_order($nick, $1);
+		$out = bot_order($heap, $nick, $1);
 	} elsif ($cmd =~ /^seen\s+(.*)$/i) {
-		$out = bot_lastseen($nick, $1, $type);
+		$out = bot_lastseen($heap, $nick, $1, $type);
 	} elsif ($cmd =~ /^meh$/i) {
 		$out = "meh~";
 	} elsif ($cmd =~ /^op$/i) {
-		$out = bot_op($from, $heap);
+		$out = bot_op($heap, $from);
 	}
 
 	return $out;
@@ -817,70 +476,30 @@ sub parse_message {
 ## Bot-routines
 # These are the various subs for the bot's commands.
 
-## bot_addanswer
-# Add an answer to the database
-sub bot_addanswer {
-	my ($answer, $nick) = @_;
-
-	my $query = "INSERT INTO answers (answer) VALUES (?)";
-	my $sth = $dbh->prepare($query);
-	$sth->execute($answer);
-	return "Answer added to database, thanks $nick!";
-}
-
-## bot_addhaiku
-# This subroutine adds a haiku poem to the database
-# params is the poem to be added and $nick (to get the author)
-sub bot_addhaiku {
-	my ($haiku, $nick) = @_;
-	
-	if ($haiku =~ /.* ## .* ## .*/){
-		my $query = "INSERT INTO haiku (poem, author) 
-				VALUES (?, ?)";
-		my $sth = $dbh->prepare($query);
-		$sth->execute($haiku, $nick);
-		return 'Haiku inserted, thanks '.$nick;
-	}
-	return "Wrong syntax for haiku. Should be '<line1> ## <line2> ## <line3>'";
-}
-
-## bot_addlart
-# This subroutine adds a lart to the database.
-# LART syntax is !lart <lart>. <lart> _must_ contain a "##"-string 
-# which in substituted for the attacked's nick
-sub bot_addlart {
-	my ($lart) = @_;
-	if ($lart !~ /##/) {
-		return "Invalid LART. A Lart must contain '##' which is replaced by the luser's nick";
-	}
-	my $query = "INSERT INTO larts (lart) VALUES (?)";
-	my $sth = $dbh->prepare($query);
-	$sth->execute($lart);
-	return "LART inserted!";
-}
 
 ## bot_addop
 # Takes params: username to give op rights, the hostmask of the sender and the 
 # heap
 # Modifies the op-value in the users table.
 sub bot_addop {
-	return "Error - you must supply a username to op" if (!$_[0]);
+	my ($heap, $user, $from) = @_;
+	return "Error - you must supply a username to op" unless $user;
 	return "Error - invalid argument count - this is likely a software bug"
-		if (!$_[1] || !$_[2]);
+		unless ($heap && $user && $from);
 
-	my ($user, $from, $heap) = @_;
 	$user = trim($user);
 	my ($nick, $host) = split(/!/, $from);
 	
 	return "Error - you must be authenticated first" 
-		if (!$heap->{$host}->{auth});
+		unless defined $heap->{auth}->{$host};
 
+	my $dbh = new Anna::DB;
 	my $query = "SELECT admin FROM users WHERE username = ?";
 	my $sth = $dbh->prepare($query);
-	$sth->execute($heap->{$host}->{user});
+	$sth->execute($heap->{auth}->{$host}->{user});
 
 	if (my @row = $sth->fetchrow()) {
-		return "Error - you are not an admin!" if (!$row[0]);
+		return "Error - you are not an admin!" unless $row[0];
 
 		# User is admin - proceed
 		$query = "SELECT id, op FROM users WHERE username = ?";
@@ -888,9 +507,9 @@ sub bot_addop {
 		$sth->execute($user);
 		@row = $sth->fetchrow();
 		return sprintf "Error - no such user exists: %s!", $user 
-			if (!@row);
+			unless @row;
 		return sprintf "%s is already an op!", $user 
-			if ($row[1] == 1);
+			if ($row[1]);
 
 		$query = "UPDATE users SET op = ? WHERE username = ?";
 		$sth = $dbh->prepare($query);
@@ -904,11 +523,12 @@ sub bot_addop {
 # Insert a new order into the database
 # syntax is !addorder <key> <order>
 sub bot_addorder {
-	my ($order) = shift;
+	my ($heap, $order) = @_;
 	if ($order =~ /^(.*)\s*=\s*(.*\#\#.*)$/) {
 		my $key = trim($1);
-		my $order = trim($2);
+		my $return = trim($2);
 		
+		my $dbh = new Anna::DB;
 		my $query = "SELECT * FROM orders WHERE key = ?";
 		my $sth = $dbh->prepare($query);
 		$sth->execute($key);
@@ -917,50 +537,34 @@ sub bot_addorder {
 		$query = "INSERT INTO orders (key, baka_order)
 			     VALUES (?,?)";
 		$sth = $dbh->prepare($query);
-		$sth->execute($key, $order);
+		$sth->execute($key, $return);
 		return sprintf "Master, I am here to serve (%s)", $key;
 	} else {
-		return "Wrong syntax for ".$trigger."addorder, Use ".$trigger."addorder <key> = <order>. <order> must contain '##* which is substituted for the user's nick";
+		return "Wrong syntax for addorder, Use ".Anna::Config->new->get('trigger')."addorder <key> = <order>. <order> must contain '##* which is substituted for the user's nick";
 	}
 }
 
 ## bot_addquote 
 # This is used to add a quote to the database
 sub bot_addquote {
-	my ($nick, $quote) = @_;
+	my ($heap, $nick, $quote) = @_;
 	my $query = "INSERT INTO quotes (quote, author) VALUES (?, ?)";
-	my $sth = $dbh->prepare($query);
+	my $sth = Anna::DB->new->prepare($query);
 	$sth->execute($quote, $nick);
 	return "Quote inserted. Thanks ".$nick;
-}
-
-## bot_answer
-# Return a random answer
-sub bot_answer {
-	my $query = "SELECT * FROM answers";
-	my $sth = $dbh->prepare($query);
-	$sth->execute();
-	
-	my $i = 0;
-	my (@rows, @answers);
-	while (@rows = $sth->fetchrow()) {
-		$answers[$i] = $rows[1];
-		$i++;
-	}
-	return $answers[rand scalar @answers];
 }
 
 ## bot_auth
 # takes four arguments - a username, a password, a host and the heap
 # Authenticates a user with anna and perform auto-op-check
 sub bot_auth {
-	my ($auth, $from, $heap) = @_;
+	my ($heap, $auth, $from) = @_;
 	return "Error - auth takes two parameters: username & password"
-		if (!$auth);
+		unless $auth;
 	return "Error - couldn't access the heap. This is most likely a bug" 
-		if (!$heap);
+		unless $heap;
 	return "Error - couldn't read your current host. This is most likely a software bug"
-		if (!$from);
+		unless $from;
 	
 	my ($nick, $host) = split(/!/, $from);
 
@@ -976,20 +580,21 @@ sub bot_auth {
 	return "Error - auth takes two parameters: username & password"
 		if (!$user || !$pass);
 	my $query = "SELECT * FROM users WHERE username = ?";
-	my $sth = $dbh->prepare($query);
+	my $sth = Anna::DB->new->prepare($query);
 	$sth->execute($user);
 	if (my @row = $sth->fetchrow()) {
 		if (crypt($pass, substr($row[2], 0, 2)) eq $row[2]) {
 			# We have a match! Light it
-			$heap->{$host}->{auth} = 1;
+#			$heap->{auth}->{$host};
 			$heap->{$host}->{user} = $user;
 			$heap->{$host}->{nick} = $nick;
 
 			# Attempt to op the user (but do not print errors)
-			my $rv = bot_op($from, $heap);
+			my $rv = bot_op($heap, $from);
 			if ($rv) {
 				# bot_op returned text, so we didn't get op.
-				bot_voice($from, $heap) if ($voice_auth);
+				bot_voice($heap, $from) 
+					if Anna::Config->new->get('voice_auth');
 			}
 			return sprintf "Welcome back %s", $user;
 		}
@@ -997,46 +602,13 @@ sub bot_auth {
 	return "Error: wrong username or password";
 }
 
-## bot_bash
-# Takes one argument, the number of the bash quote.
-# Returns the quote.
-sub bot_bash {
-	my $nr = shift;
-
-	my $ua = new LWP::UserAgent;
-	$ua->agent("Mozilla/5.0" . $ua->agent);
-	my $request;
-	if (!$nr) {
-		$request = new HTTP::Request GET => "http://bash.org/?random";
-	} else {
-		$request = new HTTP::Request GET => "http://bash.org/?$nr";
-	}
-	my $get = $ua->request($request);
-	my $content = $get->content;
-	$content =~ s/\n//g;
-	# Find the quote. If this function stops working, the problem 
-	# lies here. (? makes sure we don't gobble up the whole page 
-	# on random quotes. Been there, done that)
-	$content =~ /\<p class\=\"qt\"\>(.*?)\<\/p\>/;
-	if (!$1) {
-		return "No quote found. Please check the number";
-	}
-	my @lines = split(/<br \/>.{1}/, $1);
-
-	my $quote = "";
-	foreach (@lines){
-		$_ = decode_entities($_);	
-		$quote .= $_."\n";
-	}
-	return $quote;
-}
-
+=begin gtfo
 ## bot_dice
 # This returns the result of a die roll (or several)
 # Syntax is '!dice <amount>d<sides>' or just <int>d<int>
 #### TODO: Truncate throws on more than 50 dice instead of removing it
 sub bot_dice {
-	my ($dieroll, $nick) = @_;
+	my ($heap, $dieroll, $nick) = @_;
 	
 	if ($dieroll =~ /(\d+)d(\d+)/i) {
 		my $dice = $1;
@@ -1068,11 +640,11 @@ sub bot_dice {
 	# It shouldn't be possible to end up here, but anyway
 	return 'Syntax error in diceroll. Correct syntax is <int>d<int>';
 }
-
+=cut back
 ## bot_fortune
 # Prints a fortune, if fortune is installed
 sub bot_fortune {
-	my $args = shift;
+	my ($heap, $args) = @_;
 	
 	my @path = split(':', $ENV{'PATH'});
 	foreach (@path) {
@@ -1084,7 +656,6 @@ sub bot_fortune {
 			$cmd_args .= " -a" if ($args =~ s/\W-a\W//);
 			$cmd_args .= " -e" if ($args =~ s/\W-e\W//);
 			$cmd_args .= " -o" if ($args =~ s/\W-o\W//);
-			$cmd_args .= " " . $1 if ($args =~ /(.+)/);
 			
 			my $fortune = qx($fortune_app -s $cmd_args 2>/dev/null);
 			return "No fortunes found" if $fortune eq '';
@@ -1094,14 +665,14 @@ sub bot_fortune {
 	}
 	irclog('status' => "Failed to fetch fortune - make sure fortune is installed, and in your \$PATH\n");
 	print warning("Failed to fetch fortune - make sure fortune is installed, and in your \$PATH\n")
-		if ($verbose);
+		if Anna::Config->new->get('verbose');
 	return "No fortune, sorry :-(";
 }
 
 ## bot_googlesearch
 # Search google. Returns the first hit
 sub bot_googlesearch {
-	my $query = shift;
+	my ($heap, $query) = @_;
 	return 'FALSE' if ($query eq '');
 	$query = trim($query);
 
@@ -1160,31 +731,13 @@ sub bot_googlesearch {
 	return $out;
 }
 
-## bot_haiku
-# This returns a haiku
-sub bot_haiku {
-	my (@rows, @haiku);
-	my $query = "SELECT * FROM haiku";
-	my $sth = $dbh->prepare($query);
-	$sth->execute();
-
-	my $i = 0;
-	while (@rows = $sth->fetchrow()) {
-		$haiku[$i] = $rows[1];
-		$i++;
-	}
-	my $out = $haiku[rand scalar @haiku];
-	$out =~ s/ ## /\n/g;
-	return $out;
-}
-
 # bot_karma
 # Returns the current karma for a word
 sub bot_karma {
-	my $word = shift;
+	my ($heap, $word) = @_;
 
 	my $query = "SELECT * FROM karma WHERE word = ? LIMIT 1";
-	my $sth = $dbh->prepare($query);
+	my $sth = Anna::DB->new->prepare($query);
 	$sth->execute($word);
 	my @row;
 	if (@row = $sth->fetchrow()) {
@@ -1197,13 +750,13 @@ sub bot_karma {
 # This is used to update the karma-stats in the database
 # Takes three arguments - word, karma change and user
 sub bot_karma_update {
-	my ($word, $karma, $nick) = @_;
+	my ($heap, $word, $karma, $nick) = @_;
 	if ($word eq '') {
 		# This should NOT happen lest there's a bug in the 
 		# script
 		return "Karma not updated (Incorrect word)";
 	}
-
+	my $dbh = new Anna::DB;
 	my $query = "SELECT * FROM karma WHERE word = ? LIMIT 1";
 	my $sth = $dbh->prepare($query);
 	$sth->execute($word);
@@ -1244,55 +797,25 @@ sub bot_karma_update {
 	}
 }
 
-## bot_lart
-# This subroutine takes one argument (the nick to be lart'ed) and
-# returns a random insult
-sub bot_lart {
-	my ($nick, $luser) = @_;
-	
-	if (lc($luser) eq lc($server{'nick'})) {
-		return $nick . ": NAY THOU!";
-	}
-	
-	my $query = "SELECT * FROM larts";
-	my $sth = $dbh->prepare($query);
-	$sth->execute();
-
-	my $i = 0;
-	my (@rows, @larts);
-	while (@rows = $sth->fetchrow()) {
-		$larts[$i] = $rows[1];
-		$i++;
-	}
-	my $lart = $larts[rand scalar @larts];
-	if ($luser eq 'me') {
-		$luser = $nick;
-	}
-	$lart =~ s/##/$luser/;
-	
-	$irc->yield(ctcp => $server{'channel'} => 'ACTION '.$lart);
-	return 'FALSE';
-}
-
 ## bot_lastseen
 # This returns information on when a nick last was seen
 sub bot_lastseen {
-	my ($nick, $queried_nick, $type) = @_;
+	my ($heap, $nick, $queried_nick, $type) = @_;
 	my ($query, $sth);
-
+	
 	if ($type eq 'public') {
 		# Update lastseen table
 		$query = "DELETE FROM lastseen WHERE nick = ?";
-		$sth = $dbh->prepare($query);
+		$sth = Anna::DB->new->prepare($query);
 		$sth->execute($nick);
 		my $newmsg = $nick . ' last queried information about ' . $queried_nick;
 		$query = "INSERT INTO lastseen (nick, msg, time) 
 				VALUES (?, ?, ".time.")";
-		$sth = $dbh->prepare($query);
+		$sth = Anna::DB->new->prepare($query);
 		$sth->execute($nick, $newmsg);
 	}
 
-	if (lc($queried_nick) eq lc($server{'nick'})) {
+	if (lc($queried_nick) eq lc(Anna::Config->new->get('nick'))) {
 		return "I'm right here, dumbass";
 	}
 	if (lc($queried_nick) eq lc($nick)) {
@@ -1313,7 +836,7 @@ sub bot_lastseen {
 
 	$query = "SELECT * FROM lastseen 
 			WHERE nick = ? LIMIT 1";
-	$sth = $dbh->prepare($query);
+	$sth = Anna::DB->new->prepare($query);
 	$sth->execute(lc($queried_nick));
 	
 	my @row;
@@ -1333,9 +856,10 @@ sub bot_lastseen {
 # This handles new messages in the channel, stores them in sqlite db
 # for later retrieval with !seen command.
 sub bot_lastseen_newmsg {
-	my ($nick, $msg) = @_;
+	my ($heap, $nick, $msg) = @_;
 	my $time = time;
-
+	
+	my $dbh = new Anna::DB;
 	# Delete previous (if any) messages
 	my $query = "DELETE FROM lastseen WHERE nick = ?";
 	my $sth = $dbh->prepare($query);
@@ -1351,131 +875,24 @@ sub bot_lastseen_newmsg {
 	return;
 }
 
-## bot_mynotes
-# Return all notes belonging to a user
-# Takes one param: username to search for
-sub bot_mynotes {
-	my ($nick, $type) = @_;
-	return if (!$nick or !$type);
-	
-	my $query = "SELECT word FROM notes WHERE author = ? ORDER BY word ASC";
-	my $sth = $dbh->prepare($query);
-	$sth->execute($nick);
-	my (@row, @words);
-	my $i = 0;
-	while (@row = $sth->fetchrow()) {
-		$words[$i] = $row[0];
-		$i++;
-	}
 
-	if ((scalar(@words) > 15) && ($type eq 'public')) {
-		# Will not display more than 15 notes in 'public' (channels)
-		my $out = sprintf("%s: Too many notes. Displaying 15 first (message me to see all):", $nick);
-		for (my $j = 0; $j <= 15; $j++) {
-			$out .= " '".$words[$j]."',";
-		}
-		return $out;
-	}
-
-	return sprintf("%s: you haven't taken any notes yet... better get starting soon!", $nick) if (scalar(@words) == 0);
-	
-	my $words;
-	foreach (@words) {
-		$words .= "'$_', "
-	}
-	$words =~ s/(.*), /$1/;
-	return $nick.": your notes: $words";
-}
-
-## bot_note
-# This manages calc-stuff. Calc is a small system to associate a word or 
-# little sentence with a longer sentence, answer, solution, retort, whatever.
-sub bot_note {
-	my ($note, $nick) = @_;
-	
-	# Print random note if nothing is specified
-	if (!$note) {
-		my $query = "SELECT * FROM notes";
-		my $sth = $dbh->prepare($query);
-		$sth->execute();
-		
-		my (@row, @words, @answers, @authors);
-		my $i = 0;
-		while (@row = $sth->fetchrow()) {
-			$words[$i] = $row[1];
-			$answers[$i] = $row[2];
-			$authors[$i] = $row[3];
-			$i++;
-		}
-		if ($i == 0) {
-			return "No notes found in database. You better start taking some notes!";
-		}
-		my $num = rand scalar @words;
-		return "* ".$words[$num]." = ".$answers[$num]." [added by ".$authors[$num]."]";
-	}
-	
-	# Find out what to do
-	if ($note =~ /^(.+?)\s*=\s*(.+)$/) {
-		# User want to insert a new quote
-		# Test if word exists
-		my $word = trim($1);
-		my $answer = trim($2);
-		return 'FALSE' if (($word eq '') or ($answer eq ''));
-
-		my $query = "SELECT * FROM notes WHERE word = ?";
-		my $sth = $dbh->prepare($query);
-		$sth->execute($word);
-		my @row;
-		if (@row = $sth->fetchrow()) {
-			if ($nick eq $row[3]) {
-				$query = "UPDATE notes SET answer = ? WHERE word = ?";
-				my $sth = $dbh->prepare($query);
-				$sth->execute($answer, $word);
-				return "'".$word."' updated, thanks ".$nick."!";
-			}
-			return "Sorry ".$nick." - the word '".$word."' already exists in my database";
-		}
-		
-		# Insert new note
-		$query = "INSERT INTO notes (word, answer, author, date)
-			     VALUES (?, ?, ?, ".(int time).")";
-		$sth = $dbh->prepare($query);
-		$sth->execute($word, $answer, $nick);
-		return "'".$word."' added to the database, thanks ".$nick."!";
-	}
-	
-	$note = trim($note);
-	my $query = "SELECT * FROM notes WHERE word = ?";
-	my $sth = $dbh->prepare($query);
-	$sth->execute($note);
-	my @row = '';
-	if (@row = $sth->fetchrow()) {
-		return "* ".$row[1]." = ".$row[2]." [added by ".$row[3]."]";	
-	} else {
-		return "'".$note."' was not found, sorry";
-	}
-	
-	return 'FALSE';
-}
 
 ## bot_op
 # Takes two parameters (the hostmask of the user and the heap)
 # Ops the user is he/she has the rights
 sub bot_op {
+	my ($heap, $from) = @_;
 	return "Error - no hostmask or heap supplied. This is probably a bug"
-		if (!$_[0] || !$_[1]);
-	my ($from, $heap) = @_;
+		unless (defined $heap && defined $from);
 
 	my ($nick, $host) = split(/!/, $from);
-	if (!$heap->{$host}->{auth}) {
-		return "Error - you must authenticate first";
-	}
+	return "Error - you must authenticate first" unless defined $heap->{auth}->{$host};
 	my $query = "SELECT op FROM users WHERE username = ?";
-	my $sth = $dbh->prepare($query);
-	$sth->execute($heap->{$host}->{user});
+	my $sth = Anna::DB->new->prepare($query);
+	$sth->execute($heap->{auth}->{$host}->{user});
 	if (my @row = $sth->fetchrow()) {
 		if ($row[0]) {
-			$irc->yield(mode => $server{'channel'} => "+o" => $nick);
+			$heap->{irc}->yield(mode => Anna::Config->new->get('channel') => "+o" => $nick);
 			return;
 		}
 	}
@@ -1486,7 +903,7 @@ sub bot_op {
 # Your very own bar!
 # This sub should just return FALSE and then instead send an action
 sub bot_order {
-	my ($nick, $order) = @_;
+	my ($heap, $nick, $order) = @_;
 	
 	# Discover syntax
 	my ($out, $key);
@@ -1498,7 +915,7 @@ sub bot_order {
 	}
 
 	my $query = "SELECT * FROM orders WHERE key = ?";
-	my $sth = $dbh->prepare($query);
+	my $sth = Anna::DB->new->prepare($query);
 	$sth->execute($key);
 	
 	my @row;
@@ -1510,15 +927,18 @@ sub bot_order {
 		$out = 'hands ' . $nick . ' ' . $key;
 	}
 
-	$irc->yield(ctcp => $server{'channel'} => 'ACTION '.$out);
+	$heap->{irc}->yield(ctcp => Anna::Config->new->get('channel') => 'ACTION '.$out);
 	return 'FALSE';
 }
 
 ## bot_quote
 # This returns a random quote from a local quote database
 sub bot_quote {
+	my $heap = shift;
+	return unless defined $heap;
+
 	my $query = "SELECT * FROM quotes";
-	my $sth = $dbh->prepare($query);
+	my $sth = Anna::DB->new->prepare($query);
 	$sth->execute;
 
 	my (@rows, @quotes);
@@ -1540,22 +960,26 @@ sub bot_quote {
 # Reloads the roulette gun (only for weenies)
 # TODO: add number of reloads to !rstats
 sub bot_reload {
+	my $heap = shift;
+	return unless defined $heap;
+
 	my $query = "DELETE FROM roulette_shots";
-	my $sth = $dbh->prepare($query);
+	my $sth = Anna::DB->new->prepare($query);
 	$sth->execute();
-	$irc->yield(ctcp => $server{'channel'} => 'ACTION reloads...');
+	$heap->{irc}->yield(ctcp => Anna::Config->new->get('channel') => 'ACTION reloads...');
 	return 'FALSE';
 }
 
 ## bot_register
 # Register a new user. Takes two vars - username and password
 sub bot_register {
+	my ($heap, $user, $pass, $from) = @_;
 	return "Error - you must supply a username and a password" 
-		if (!$_[0] || !$_[1]);
+		unless (defined $user && defined $pass);
 	return "Error - missing heap or hostmask in register arguments. This is likely a bug"
-		if (!$_[2] || !$_[3]);
+		unless (defined $heap && defined $from);
 	
-	my ($user, $pass) = @_;
+	my $dbh = new Anna::DB;
 	my $query = "SELECT id FROM users WHERE username = ?";
 	my $sth = $dbh->prepare($query);
 	$sth->execute($user);
@@ -1566,41 +990,42 @@ sub bot_register {
 	my @salt_chars = ('a'..'z','A'..'Z','0'..'9');
 	my $salt = $salt_chars[rand(63)] . $salt_chars[rand(63)];
 	$sth->execute($user, crypt($pass, $salt));
-	bot_auth($user, $pass, $_[2], $_[3]);
-	return "You were succesfully registered and are already logged in. Welcome aboard"
+	bot_auth($heap, $user, $pass, $from);
+	return "You were succesfully registered and are already logged in. Welcome aboard";
 }
 
 ## bot_rmop
 # Removes a user from list of opers. Takes three params - username to remove, 
 # sender and the heap
 sub bot_rmop {
-	return "Error - you must supply a username" if (!$_[0]);
+	my ($heap, $user, $from) = @_;
+	return "Error - you must supply a username" unless defined $user;
 	return "Error - invalid argument count - this is likely a software bug"
-		if (!$_[1] || !$_[2]);
+		unless (defined $heap && defined $from);
 
-	my ($user, $from, $heap) = @_;
 	$user = trim($user);
 	my ($nick, $host) = split(/!/, $from);
 	
 	return "Error - you must be authenticated first" 
-		if (!$heap->{$host}->{auth});
-
+		unless defined $heap->{auth}->{$host};
+	
+	my $dbh = new Anna::DB;
 	my $query = "SELECT admin FROM users WHERE username = ?";
 	my $sth = $dbh->prepare($query);
-	$sth->execute($heap->{$host}->{user});
+	$sth->execute($heap->{auth}->{$host}->{user});
 
 	if (my @row = $sth->fetchrow()) {
-		return "Error - you are not an admin!" if (!$row[0]);
+		return "Error - you are not an admin!" unless $row[0];
 
 		# User is admin - proceed
 		$query = "SELECT id FROM users WHERE username = ?";
 		$sth = $dbh->prepare($query);
 		$sth->execute($user);
 		return sprintf "Error - no such user exists: %s!", $user 
-			if (!$sth->fetchrow());
+			unless $sth->fetchrow();
 
 		$query = "UPDATE users SET op = ? WHERE username = ?";
-		$sth = $dbh->prepare($query);
+		$sth = Anna::DB->new->prepare($query);
 		$sth->execute(0, $user);
 		return sprintf "User %s successfully removed from list of opers", $user;
 	}
@@ -1610,19 +1035,24 @@ sub bot_rmop {
 ## bot_rot13
 # Encrypts and decrypts rot13-strings
 sub bot_rot13 {
-	my $string = $_[0];
+	my ($heap, $str) = @_;
+	return unless defined $str;
 
-	$string =~ y/A-Za-z/N-ZA-Mn-za-m/;
-	return $string;
+	$str =~ y/A-Za-z/N-ZA-Mn-za-m/;
+	return $str;
 }
 
 ## bot_roulette
 # Random chance of getting killed (kicked)
 # Do you feel lucky?
 sub bot_roulette {
-	my $nick = $_[0];
+	my ($heap, $nick) = @_;
+	return "Wrong param-count in roulette... please report this!"
+		unless (defined $heap && defined $nick);
 	
 	my ($shot, $hit, $out);
+
+	my $dbh = new Anna::DB;
 	my $query = "SELECT * FROM roulette_shots";
 	my $sth = $dbh->prepare($query);
 	$sth->execute();
@@ -1693,7 +1123,10 @@ sub bot_roulette {
 # bot_roulette_stats
 # Print statistical information for roulette games
 sub bot_roulette_stats {
+	my $heap = shift;
+	return unless defined $heap;
 	# Most hits
+	my $dbh = new Anna::DB;
 	my $query = "SELECT * FROM roulette_stats ORDER BY hits DESC LIMIT 1";
 	my $sth = $dbh->prepare($query);
 	$sth->execute();
@@ -1733,21 +1166,21 @@ sub bot_roulette_stats {
 # Searches various tables in the database
 # Syntax is !search <table> <string>. Possible values are "notes" and "quotes"
 sub bot_search {
-	my $query = $_[0];
-	return 'FALSE' if (!$query);
+	my ($heap, $where) = @_;
+	return unless defined $heap;
+	return 'FALSE' unless defined $where;
+
 	my ($table, $string);
-	
-	if ($query =~ /(notes|quotes|all)\s+(.*)/) {
+	if ($where =~ /(notes|quotes|all)\s+(.*)/) {
 		$table = $1;
 		$string = $2;
 	} else {
 		$table = 'all';
-		$string = $query;
+		$string = $where;
 	}
-	
 	if ($table eq 'notes') {
 		my $query = qq|SELECT * FROM notes WHERE word LIKE ?|;
-		my $sth = $dbh->prepare($query);
+		my $sth = Anna::DB->new->prepare($query);
 		# No... the error wasn't here... I fail miserably
 		$sth->execute("%".$string."%") or die(error($sth->errstr));
 		my ($i, $j) = 0;
@@ -1779,7 +1212,7 @@ sub bot_search {
 
 	if ($table eq 'quotes') {
 		my $query = qq|SELECT * FROM quotes WHERE quote LIKE ?|;
-		my $sth = $dbh->prepare($query);
+		my $sth = Anna::DB->new->prepare($query);
 		$sth->execute("%".$string."%") or die(error($sth->errstr));
 		my ($i, $j) = 0;
 		my (@row, @quotes);
@@ -1821,23 +1254,23 @@ sub bot_search {
 ## bot_uptime
 # Returns current uptime of the bot
 sub bot_uptime {
-	return "Uptime: " . calc_diff(STARTTIME);
+	return "Uptime: " . calc_diff(Anna::Utils::STARTTIME);
 }
 
 ## bot_voice
 # Takes two params (the hostmask of the user and the heap)
 # Voices the user if setting is set.
 sub bot_voice {
+	my ($heap, $from) = @_;
 	return "Error - no hostmask or heap supplied. This is likely a bug"
-		if (!$_[0] || !$_[1]);
-	my ($from, $heap) = @_;
+		unless (defined $heap && defined $from);
 
+	my $c = new Anna::Config;
 	my ($nick, $host) = split(/!/, $from);
-	if (!$heap->{$host}->{auth}) {
-		return "Error - you must authenticate first";
-	}
-	return "Error - Thou mvst remain voiceless" if (!$voice_auth);
-	$irc->yield(mode => $server{'channel'} => "+v" => $nick);
+	return "Error - you must authenticate first" unless defined $heap->{auth}->{$host};
+	
+	return "Error - Thou mvst remain voiceless" unless $c->get('voice_auth');
+	$heap->{irc}->yield(mode => $c->get('channel') => "+v" => $nick);
 	return;
 }
 
@@ -1846,32 +1279,34 @@ sub bot_voice {
 
 ## do_autoping
 # Let's pings ourself to ensure the connection is still alive
-sub do_autoping {
-	my ($kernel, $heap) = @_[KERNEL, HEAP];
-	$irc->yield(userhost => $irc->nick_name) unless $heap->{seen_traffic};
-	$heap->{seen_traffic} = 0;
-	$kernel->delay(autoping => 300);
-}
+#sub do_autoping {
+#	my ($kernel, $heap) = @_[KERNEL, HEAP];
+#	$heap->{irc}->yield(userhost => $heap->{irc}->nick_name) unless $heap->{seen_traffic};
+#	$heap->{seen_traffic} = 0;
+#	$kernel->delay(autoping => 300);
+#}
 
 ## do_connect
 # Connect us!
-sub do_connect {
-	irclog('status', sprintf "-!- Connecting to %s", $server{'server'});
-	printf "[%s] %s!%s Connecting to %s\n", print_time(), colour('-', '94'),
-		colour('-', '94'), $server{'server'} if ($verbose);
-	$irc->yield(connect => {});
-}
+#sub do_connect {
+#	my $c = $_[HEAP]->{config};
+#	irclog('status', sprintf "-!- Connecting to %s", $c->get('server'));
+#	printf "[%s] %s!%s Connecting to %s\n", print_time(), colour('-', '94'),
+#		colour('-', '94'), $c->get('server') if $c->get('verbose');
+#	$_[HEAP]->{irc}->yield(connect => {});
+#}
 
 ## do_reconnect
 # This handles reconnection when we've died for various reasons
-sub do_reconnect {
-	my $kernel = $_[KERNEL];
-	# Disable autopings when disconnected
-	$kernel->delay(autoping => undef);
-	irclog('status', 'Attempting reconnect in 60 seconds...');
-	printf "[%s] Attempting reconnect in 60 seconds...\n", print_time() if (!$silent);
-	$kernel->delay(connect => 60);
-}
+#sub do_reconnect {
+#	my $kernel = $_[KERNEL];
+#	# Disable autopings when disconnected
+#	$kernel->delay(autoping => undef);
+#	irclog('status', 'Attempting reconnect in 60 seconds...');
+#	printf "[%s] Attempting reconnect in 60 seconds...\n", print_time() 
+#		unless $_[HEAP]->{config}->get('silent');
+#	$kernel->delay(connect => 60);
+#}
 
 ## Err-routines
 # We get these when the irc server returns a numeric 4xx error. Print it to the 
@@ -1881,11 +1316,15 @@ sub do_reconnect {
 # This gets called whenever a connection attempt returns '433' - nick taken.
 # The subroutine swaps between several different nicks
 sub err_nick_taken {
-	my $newnick = $server{'nick'} . int(rand(100));
+	my $c = new Anna::Config;
+	my $newnick = $c->get('nick') . int(rand(100));
 	irclog('status', sprintf "Nick taken, trying %s...", $newnick);
-	printf "[%s] Nick taken, trying %s...\n", print_time(), $newnick if (!$silent); 
-	$irc->yield(nick => $newnick);
-	$server{'nick'} = $newnick;
+	printf "[%s] Nick taken, trying %s...\n", print_time(), $newnick 
+		unless $c->get('silent'); 
+	$_[HEAP]->{irc}->yield(nick => $newnick);
+	$_[HEAP]->{nickrecover} = 1;
+	$c->set('oldnick' => $c->get('nick'));
+	$c->set('nick' => $newnick);
 }
 
 ## err_4xx_default
@@ -1896,28 +1335,8 @@ sub err_4xx_default {
 	my $args = $_[ARG2];
 	irclog('status' => sprintf "%s: %s", $args->[0], $args->[1]);
 	printf "[%s] ".colour('-', '94')."!".colour('-', '94')." %s: %s\n", 
-		print_time(), $args->[0], $args->[1] if (!$silent);
-}
-
-## Session routines
-# These subroutines relates purely to session handling
-
-## session_auth
-# Takes two arguments, username and password. Authenticates users.
-sub session_auth {
-	my ($username, $pass) = @_;
-	my $query = "SELECT * FROM users WHERE username = ?";
-	my $sth = $dbh->prepare($query);
-	$sth->execute($username);
-	my %row;
-	if (%row = $sth->fetchrow_hash()) {
-		if ($row{'password'} eq $pass) {
-			
-			return "Login accepted";	
-		}
-		return "Invalid username or password";
-	}
-	return "Invalid username or password";
+		print_time(), $args->[0], $args->[1] 
+			unless Anna::Config->new->get('silent');
 }
 
 ## Handle subroutines
@@ -1926,10 +1345,11 @@ sub session_auth {
 ## on_324
 # channelmodeis (refer to the rfc...)
 sub on_324 {
+	return if ($_[ARG2]->[1] eq '+'); # No modes set
 	irclog('status' => sprintf "-!- Mode/%s %s", $_[ARG2]->[0], $_[ARG2]->[1]);
 	printf "[%s] %s!%s Mode/%s %s\n", print_time(), colour('-', 94), 
 		colour('-', 94), colour($_[ARG2]->[0], 96), $_[ARG2]->[1] 
-		if ($verbose);
+		if Anna::Config->new->get('verbose');
 }
 
 ## on_329
@@ -1940,7 +1360,7 @@ sub on_329 {
 	printf "[%s] %s!%s Channel %s created %s\n", print_time(), 
 		colour('-', 94), colour('-', 94), 
 		colour($msg->[0], 96), scalar localtime $msg->[1]
-		if ($verbose);
+			if Anna::Config->new->get('verbose');
 }
 
 ## on_332
@@ -1950,7 +1370,7 @@ sub on_332 {
 	my $msg = $_[ARG2];
 	irclog('status' => sprintf "-!- Topic for %s: %s", $msg->[0], $msg->[1]);
 	printf "[%s] ".colour('-', 94)."!".colour('-', 94)." Topic for %s: %s\n", print_time(), colour($msg->[0], '96'), $msg->[1]
-		if ($verbose);
+		if Anna::Config->new->get('verbose');
 }
 
 ## on_333
@@ -1962,20 +1382,20 @@ sub on_333 {
 	my $msg = $_[ARG2];
 	irclog('status' => sprintf "-!- Topic set by %s [%s]", $msg->[1], scalar localtime $msg->[2]);
 	printf "[%s] ".colour('-', 94)."!".colour('-', 94)." Topic set by %s [%s]\n", print_time(), $msg->[1], 
-		scalar localtime $msg->[2] if ($verbose);
+		scalar localtime $msg->[2] if Anna::Config->new->get('verbose');
 }
 
 ## on_namreply
 # Whenever we join a channel the server returns irc_353. Print a list of users
 # in the channel
 sub on_namreply {
-	return if (!$verbose);
+	return unless Anna::Config->new->get('verbose');
 	my @args = @{$_[ARG2]};
 	shift (@args); # discard the "="-sign
 	my $channel = shift(@args);
 	my @users = split(/ /, shift(@args));
 	my $out = sprintf "[%s] [".colour('Users', 32)." %s]\n", print_time(), 
-		colour($channel, 92) if ($verbose);
+		colour($channel, 92);
 	# FIXME: Do some automatic calculation instead of just printing in 
 	# five rows
 	my ($i, $j) = (0, 0);
@@ -2006,18 +1426,19 @@ sub on_msg {
 	$heap->{seen_traffic} = 1;
 
 	# Kill her own messages
-	return if ($nick eq $server{'nick'});
+	return if ($nick eq Anna::Config->new->get('nick'));
 
 	my $out = parse_message($kernel, $heap, $from, $to, $msg, 'msg');
 	
 	# Return if there's nothing to print
+	return unless defined $out;
 	return if ($out eq 'FALSE'); 
 	
 	my @lines = split(/\n/, $out);
 	foreach(@lines) {
-		irclog($nick => sprintf "<%s> %s", $irc->nick_name, $_);
-		$irc->yield(privmsg => $nick => $_);
-		$irc->yield(ctcp => $server{'channel'} => 'ACTION reloads...') if ($_ =~ /chamber \d of \d => \*bang\*/);
+		irclog($nick => sprintf "<%s> %s", $heap->{irc}->nick_name, $_);
+		$heap->{irc}->yield(privmsg => $nick => $_);
+		$heap->{irc}->yield(ctcp => Anna::Config->new->get('channel') => 'ACTION reloads...') if ($_ =~ /chamber \d of \d => \*bang\*/);
 	}
 }
 
@@ -2026,15 +1447,16 @@ sub on_msg {
 sub on_public {
 	my ($kernel, $heap, $from, $to, $msg) = @_[KERNEL, HEAP, ARG0, ARG1, ARG2];
 	my ($nick) = split(/!/, $from);
+	my $c = new Anna::Config;
 	
 	irclog($to->[0] => sprintf "<%s> %s", $nick, $msg);
 	$heap->{seen_traffic} = 1;
 
 	# Kill her own messages
-	return if ($nick eq $server{'nick'});
+	return if ($nick eq $c->get('nick'));
 
 	my $out = parse_message($kernel, $heap, $from, $to, $msg, 'public');
-	return if !defined($out);
+	return unless defined($out);
 	return if ($out eq 'FALSE');
 
 
@@ -2043,11 +1465,11 @@ sub on_public {
 	# sent to.
 	my @lines = split(/\n/, $out);
 	foreach(@lines) {
-		irclog($to->[0] => sprintf "<%s> %s", $irc->nick_name, $_);
-		$irc->yield(privmsg => $to => $_);
+		irclog($to->[0] => sprintf "<%s> %s", $heap->{irc}->nick_name, $_);
+		$heap->{irc}->yield(privmsg => $to => $_);
 		if ($out =~ /chamber \d of \d => \*bang\*/) {
-			$irc->yield(kick => $server{'channel'} => $nick => "Bang! You die...");
-			$irc->yield(ctcp => $server{'channel'} => 'ACTION reloads...');
+			$heap->{irc}->yield(kick => $c->get('channel') => $nick => "Bang! You die...");
+			$heap->{irc}->yield(ctcp => $c->get('channel') => 'ACTION reloads...');
 		}
 	}
 }
@@ -2057,19 +1479,20 @@ sub on_public {
 sub on_notice {
 	my ($from, $msg) = @_[ARG0, ARG2];
 	
+	my $c = new Anna::Config;
 	$_[HEAP]->{seen_traffic} = 1;
 	# No ! should indicate server message
 	if ($from !~ /!/) {
 		irclog('status' => sprintf "!%s %s", $from, $msg);
 		printf "[%s] %s %s\n", print_time(), colour("!".$from, '92'), $msg 
-			if (!$silent);
+			unless $c->get('silent');
 		return;
 	}
 
 	my ($nick, $host) = split(/!/, $from);
 	irclog($nick => sprintf "-%s(%s)- %s", $nick, $host, $msg);
 	printf "[%s] -%s(%s)- %s\n", print_time(), colour($nick, "95"),
-			colour($host, '35'), $msg if (!$silent);
+			colour($host, '35'), $msg unless $c->get('silent');
 }
 
 
@@ -2079,28 +1502,32 @@ sub on_notice {
 # on_connect takes responsibility for connecting to the appropriate channels
 # and for negotiating with nickserv
 sub on_connect {
-	$_[HEAP]->{seen_traffic} = 1;
-	if (($server{'nspasswd'} ne "") and ($default{'nick'} eq $server{'nick'})) {
-		printf "[%s] Identifying with services... ", print_time() if (!$silent);
-		$irc->yield(privmsg => 'nickserv' => "IDENTIFY $server{'nspasswd'}");
-		printf "done!\n" if (!$silent);;
+	my $h = $_[HEAP];
+	$h->{seen_traffic} = 1;
+	my $irc = $h->{irc};
+	my $c = new Anna::Config;
+	
+	# Should we recover out nick?
+	if (defined $h->{nickrecover} && $h->{nickrecover} && $c->get('nspasswd')) {
+		printf "[%s] Nick taken. Reclaiming custody from services... ", print_time() unless $c->get('silent');
+		$irc->yield(privmsg => 'nickserv' => "GHOST ".$c->get('oldnick')." ".$c->get('nspasswd'));
+		$irc->yield(privmsg => 'nickserv' => "RECOVER ".$c->get('oldnick')." ".$c->get('nspasswd'));
+		$irc->yield(nick => $c->get('oldnick'));
+		$c->delete('oldnick');
+		printf "done!\n" unless $c->get('silent');
 	}
 	
-	if (($server{'nick'} ne $default{'nick'}) and ($server{'nspasswd'} ne "")) {
-		printf "[%s] Nick taken. Reclaiming custody from services... ", print_time() if (!$silent);
-		$irc->yield(privmsg => 'nickserv' => "GHOST $default{'nick'} $server{'nspasswd'}");
-		$irc->yield(privmsg => 'nickserv' => "RECOVER $default{'nick'} $server{'nspasswd'}");
-		$irc->yield(nick => $default{'nick'});
-		printf "done!\n" if (!$silent);
-		printf "[%s] Identifying with services... ", print_time() if (!$silent);
-		$irc->yield(privmsg => 'nickserv' => "IDENTIFY $server{'nspasswd'}");
-		printf "done!\n" if (!$silent);
+	if ($c->get('nspasswd')) {
+		printf "[%s] Identifying with services... ", print_time() unless $c->get('silent');
+		$irc->yield(privmsg => 'nickserv' => "IDENTIFY ".$c->get('nspasswd'));
+		printf "done!\n" unless $c->get('silent');
 	}
-	irclog('status' => sprintf "Joining %s", $server{'channel'});
-	printf "[%s] Joining %s...\n", print_time(), $server{'channel'} if (!$silent);
-	$irc->yield(mode => $server{'nick'} => '+i');
-	$irc->yield(join => $server{'channel'});
-	$irc->yield(mode => $server{'channel'});
+	
+	irclog('status' => sprintf "Joining %s", $c->get('channel'));
+	printf "[%s] Joining %s...\n", print_time(), $c->get('channel') unless $c->get('silent');
+	$irc->yield(mode => $c->get('nick') => '+i');
+	$irc->yield(join => $c->get('channel'));
+	$irc->yield(mode => $c->get('channel'));
 #	$self->privmsg($server{'channel'}, "all hail your new bot");
 }
 
@@ -2109,13 +1536,13 @@ sub on_connect {
 # server has accepted us yet, so we can't send anything
 sub on_connected {
 	my $kernel = $_[KERNEL];
+	my $c = new Anna::Config;
 	
 	$_[HEAP]->{seen_traffic} = 1;
 	$kernel->delay(autoping => 300);
-
-	irclog('status' => sprintf "Connected to %s", $server{'server'});
+	irclog('status' => sprintf "Connected to %s", $c->get('server'));
 	printf "[%s] %s!%s Connected to %s\n", print_time(), colour('-', '94'),
-		colour('-', '94'),  $server{'server'} if (!$silent);
+		colour('-', '94'),  $c->get('server') unless $c->get('silent');
 }
 
 ## on_join
@@ -2124,10 +1551,13 @@ sub on_connected {
 sub on_join {
 	my ($from, $channel) = @_[ARG0, ARG1];
 	my ($nick, $host) = split(/!/, $from);
-	
-	$_[HEAP]->{seen_traffic} = 1;
+	my $h = $_[HEAP];
+	my $c = new Anna::Config;
+	my $dbh = new Anna::DB;
+	$h->{seen_traffic} = 1;
+
 	# Update lastseen table
-	if ($channel eq $server{'channel'}) {
+	if ($channel eq $c->get('channel')) {
 		my ($query, $sth, $msg);
 		
 		$msg = $nick . " joined " . $channel;
@@ -2143,9 +1573,11 @@ sub on_join {
 		$sth->execute(lc($nick), $msg);
 	}
 
-	irclog($channel => sprintf "-!- %s [%s] has joined %s", $nick, $host, $channel);
+	irclog($channel => sprintf "-!- %s [%s] has joined %s", $nick, $host,
+		$channel);
 	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." %s [%s] has joined %s\n", 
-		print_time(), colour($nick, '96'), colour($host, '96'), $channel if ($verbose);
+		print_time(), colour($nick, '96'), colour($host, '96'), $channel
+		if $c->get('verbose');
 }
 
 ## on_kill
@@ -2157,7 +1589,7 @@ sub on_kill {
 	irclog('status' => sprintf "-!- You were killed by %s [%s] [%s]", $user, $host, $reason);
 	printf "[%s] %s!%s You were %s by %s [%s] [%s]\n", print_time, 
 		colour("-", 94), colour("-", 94), colour('killed', 91),
-		$user, $host, $reason if (!$silent);
+		$user, $host, $reason unless Anna::Config->new->get('silent');
 }
 
 ## on_part
@@ -2165,10 +1597,12 @@ sub on_kill {
 sub on_part {
 	my ($from, $channel, $msg) = @_[ARG0, ARG1, ARG2];
 	my ($nick, $host) = split(/!/, $from);
-	
-	$_[HEAP]->{seen_traffic} = 1;
+	my $h = $_[HEAP];
+	my $c = new Anna::Config;
+
+	$h->{seen_traffic} = 1;
 	# Update lastseen table
-	if (lc($channel) eq lc($server{'channel'})) {
+	if (lc $channel  eq lc $c->get('channel')) {
 		my ($query, $sth, $ls_msg);
 		
 		if ($msg) {
@@ -2177,6 +1611,7 @@ sub on_part {
 			$ls_msg = $nick . " left from " . $channel . " with no reason";
 		}
 		
+		my $dbh = new Anna::DB;
 		# Delete old record
 		$query = "DELETE FROM lastseen WHERE nick = ?";
 		$sth = $dbh->prepare($query);
@@ -2189,11 +1624,12 @@ sub on_part {
 	}
 
 	#FIXME: Blargh... this almost makes me puke
-	$msg = '' if !defined($msg);
+	$msg = '' unless defined($msg);
 	
 	irclog($channel => sprintf "-!- %s has left %s [%s]", $nick, $channel, $msg);
 	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." %s has left %s [%s]\n", 
-		print_time(), $nick, colour($channel, "96"), $msg if ($verbose);
+		print_time(), $nick, colour($channel, "96"), $msg 
+		if $c->get('verbose');
 }
 
 ## on_quit
@@ -2201,8 +1637,10 @@ sub on_part {
 sub on_quit {
 	my ($from, $msg) = @_[ARG0, ARG1];
 	my ($nick, $host) = split(/!/, $from);
-	
-	$_[HEAP]->{seen_traffic} = 1;
+	my $h = $_[HEAP];
+	my $dbh = new Anna::DB;
+
+	$h->{seen_traffic} = 1;
 	# Update lastseen table
 	my ($query, $sth, $ls_msg);
 	
@@ -2224,7 +1662,8 @@ sub on_quit {
 
 	irclog('status' => sprintf "%s (%s) has quit IRC [%s]", $nick, $host, $msg);
 	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." %s (%s) has quit IRC [%s]\n",
-		print_time(), $nick, $host, $msg if ($verbose);
+		print_time(), $nick, $host, $msg 
+		if Anna::Config->new->get('verbose');
 }
 
 ## on_nick
@@ -2232,8 +1671,10 @@ sub on_quit {
 sub on_nick {
 	my ($from, $newnick) = @_[ARG0, ARG1];
 	my ($nick, $host) = split(/!/, $from);
-
-	$_[HEAP]->{seen_traffic} = 1;
+	my $h = $_[HEAP];
+	my $c = new Anna::Config;
+	my $dbh = new Anna::DB;
+	$h->{seen_traffic} = 1;
 	# Update lastseen table
 	my ($query, $sth, $msg);
 	
@@ -2257,9 +1698,9 @@ sub on_nick {
 	$sth->execute(lc($newnick), $msg);
 	
 	# FIXME: find the channel in a supplied parameter to this function
-	irclog($server{'channel'} => sprintf "-!- %s is now known as %s", $nick, $newnick);
+	irclog($c->get('channel') => sprintf "-!- %s is now known as %s", $nick, $newnick);
 	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." %s is now known as %s\n",
-		print_time(), $nick, $newnick if ($verbose);
+		print_time(), $nick, $newnick if $c->get('verbose');
 }
 
 ## on_topic
@@ -2268,20 +1709,22 @@ sub on_nick {
 sub on_topic {
 	my ($from, $channel, $topic) = @_[ARG0, ARG1, ARG2];
 	my ($nick, $host) = split(/!/, $from);
+	my $h = $_[HEAP];
+	my $c = new Anna::Config;
 
-	$_[HEAP]->{seen_traffic} = 1;
+	$h->{seen_traffic} = 1;
 	
-	if (!$topic) {
+	unless ($topic) {
 		irclog($channel => sprintf "-!- Topic unset by %s on %s", $nick, $channel);
 		printf "[%s] %s!%s Topic unset by %s on %s", print_time(), 
 			colour('-', '94'), colour('-', '94'), $nick, 
-			$channel if ($verbose);
+			$channel if $c->get('verbose');
 		return;
 	}
 	
 	irclog($channel => sprintf "-!- %s changed the topic of %s to: %s", $nick, $channel, $topic);
 	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." %s changed the topic of %s to: %s\n",
-		print_time(), $nick, $channel, $topic if ($verbose);
+		print_time(), $nick, $channel, $topic if $c->get('verbose');
 }
 
 
@@ -2290,133 +1733,23 @@ sub on_topic {
 sub on_mode {
 	my ($from, $to, $mode, $operands) = @_[ARG0, ARG1, ARG2, ARG3];
 	my ($nick, $host) = split(/!/, $from);
-	$_[HEAP]->{seen_traffic} = 1;
+	my $h = $_[HEAP];
+	my $c = new Anna::Config;
+
+	$h->{seen_traffic} = 1;
 	$mode .= " ".$operands if ($operands);
 
-	if (lc($to) eq lc($server{'nick'})) {
+	if (lc $to eq lc $c->get('nick')) {
 		irclog('status' => sprintf "-!- Mode change [%s] for user %s", $mode, $nick);
 		printf "[%s] %s!%s Mode change [%s] for user %s\n", 
 			print_time(), colour('-', '94'), colour('-', '94'), 
-			$mode, $nick if ($verbose);
+			$mode, $nick if $c->get('verbose');
 		return;
 	}
 	irclog($to => sprintf "-!- Mode/%s [%s] by %s", $to, $mode, $nick);
 	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." Mode/%s [%s] by %s\n", 
-		print_time(), colour($to, "96"), $mode, $nick if ($verbose);
-}
-
-## on_ctcp_ping
-# This gets called whenever you get /ctcp ping'd. Should return a nice
-# response to the pinger
-sub on_ctcp_ping {
-	my ($from, $to, $msg) = @_[ARG0, ARG1, ARG2];
-	my ($nick, $host) = split(/!/, $from);
-	
-	$_[HEAP]->{seen_traffic} = 1;
-
-	# Protocol says to use PONG in ctcpreply, but irssi & xchat for some 
-	# reason only reacts to PING... mrmblgrbml
-	$msg = "PING ".$msg;
-	$irc->yield(ctcpreply => $nick => $msg);
-
-	irclog('status' => sprintf "-!- CTCP PING request from %s recieved", $nick);
-	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." CTCP PING request from %s recieved\n",
-		print_time(), $nick if ($verbose);
-}
-
-## on_ctcpreply_ping
-# Subroutine for handling ping replies. Just gives the lag results for
-# outgoing pings.
-# FIXME: Use microseconds instead
-sub on_ctcpreply_ping {
-	my ($from, $to, $msg) = @_[ARG0, ARG1, ARG2];
-	my ($nick, $host) = split(/!/, $from);
-
-	$_[HEAP]->{seen_traffic} = 1;
-	
-	if (!$msg) {
-		irclog('status' => sprintf "-!- Recieved invalid CTCP PING REPLY from %s", $nick);
-		printf "[%s] ".colour("-", "94")."!".colour("-", "94")." Recieved invalid CTCP PING REPLY from %s\n",
-			print_time(), $nick if (!$silent);
-		return;
-	}
-
-	my $diff = time - $msg;
-	irclog('status' => sprintf "-!- CTCP PING REPLY from %s: %s sec", $nick, $diff);
-	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." CTCP PING REPLY from %s: %s sec\n",
-		print_time(), $nick, $diff if (!$silent);
-}
-
-## on_ctcp_version
-# This subroutine reacts to the /ctcp version, returning the current 
-# version of this script
-sub on_ctcp_version {
-	my ($from, $to, $msg) = @_[ARG0, ARG1, ARG2];
-	my ($nick, $host) = split(/!/, $from);
-
-	$_[HEAP]->{seen_traffic} = 1;
-	
-	$irc->yield(ctcpreply => $nick => SCRIPT_NAME." : ".SCRIPT_VERSION." : ".SCRIPT_SYSTEM);
-	irclog('status' => sprintf "-!- CTCP VERSION request from %s recieved", $nick);
-	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." CTCP VERSION request from %s recieved\n",
-		print_time(), $nick if ($verbose);
-}
-
-## on_ctcpreply_version
-# This subroutine prints out version replies to stdout
-sub on_ctcpreply_version {
-	my ($from, $to, $msg) = @_[ARG0, ARG1, ARG2];
-	my ($nick) = split(/!/, $from);
-
-	$_[HEAP]->{seen_traffic} = 1;
-	
-	if (!$msg) {
-		irclog('status' => sprintf "-!- Recieved invalid CTCP VERSION REPLY from %s", $nick);
-		printf "[%s] %s!%s Recieved invalid CTCP VERSION REPLY from %s\n", 
-			print_time(), colour('-', '94'), colour('-', '94'), 
-			$nick if (!$silent);
-		return;
-	}
-
-	irclog('status' => sprintf "-!- CTCP VERSION REPLY from %s: %s", $nick, $msg);
-	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." CTCP VERSION REPLY from %s: %s\n",
-		print_time(), $nick, $msg if (!$silent);
-}
-
-## on_ctcp_time
-# This returns the local system time, to whoever sent you a CTCP TIME
-sub on_ctcp_time {
-	my $from = $_[ARG0];
-	my ($nick) = split(/!/, $from);
-
-	$_[HEAP]->{seen_traffic} = 1;
-	
-	$irc->yield(ctcpreply => $nick => "TIME ".scalar localtime time);
-
-	irclog('status' => sprintf "-!- CTCP TIME recieved from %s", $nick);
-	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." CTCP TIME recieved from %s\n",
-		print_time(), $nick if ($verbose);
-}
-
-## on_ctcp_finger
-# I can't remember what this i supposed to return, so give a rude 
-# response
-sub on_ctcp_finger {
-	my $from = $_[ARG0];
-	my ($nick) = split(/!/, $from);
-
-	$_[HEAP]->{seen_traffic} = 1;
-	
-	my @replies = ("Dont finger me there...",
-			"Don't your fscking dare!",
-			"Screw off!",
-			"Yes, please",
-			"Please don't kill me... she did");
-	$irc->yield(ctcpreply => $nick => "FINGER ".$replies[rand scalar @replies]);
-
-	irclog('status' => sprintf "-!- CTCP FINGER recieved from %s", $nick);
-	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." CTCP FINGER recieved from %s\n",
-		print_time(), $nick if ($verbose);
+		print_time(), colour($to, "96"), $mode, $nick 
+		if $c->get('verbose');
 }
 
 ## on_disconnected
@@ -2427,7 +1760,7 @@ sub on_disconnected {
 
 	irclog('status' => sprintf "-!- Disconnected from %s", $server);
 	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." Disconnected from %s\n", 
-		print_time(), $server if (!$silent);
+		print_time(), $server unless Anna::Config->new->get('silent');
 	$kernel->yield("reconnect");
 }
 
@@ -2438,17 +1771,20 @@ sub on_error {
 	my ($kernel, $error) = @_[KERNEL, ARG0];
 	irclog('status' => sprintf "-!- ERROR: %s", $error);
 	printf STDERR "[%s] ".colour("-", "94")."!".colour("-", "94")." ".error("ERROR:")." %s\n", 
-		print_time(), $error if (!$silent);
+		print_time(), $error unless Anna::Config->new->get('silent');
 }
 
 ## on_socketerr
 # This is for whenever we fail to establish a connection. But let's try again!
 sub on_socketerr {
 	my ($kernel, $error) = @_[KERNEL, ARG0];
-	irclog('status' => sprintf "-!- Failed to establish connection to %s: %s", $server{'server'}, $error);
+	my $h = $_[HEAP];
+	my $c = new Anna::Config;
+
+	irclog('status' => sprintf "-!- Failed to establish connection to %s: %s", $c->get('server'), $error);
 	printf STDERR "[%s] %s!%s Failed to establish connection to %s: %s\n", 
 		print_time(), colour('-', '94'), colour('-', '94'), 
-		$server{'server'}, $error if (!$silent);
+		$c->get('server'), $error unless $c->get('silent');
 	$kernel->yield("reconnect");
 }
 
@@ -2457,28 +1793,34 @@ sub on_socketerr {
 sub on_kick {
 	my ($from, $channel, $to, $msg) = @_[ARG0, ARG1, ARG2, ARG3];
 	my ($nick, $host) = split(/!/, $from);
+	my $h = $_[HEAP];
+	my $c = new Anna::Config;
 
-	$_[HEAP]->{seen_traffic} = 1;
-	if ($to eq $irc->nick_name) {
+	$h->{seen_traffic} = 1;
+
+	if ($to eq $h->{irc}->nick_name) {
 		# We were kicked...
 		irclog('status' => sprintf "-!- Recieved KICK by %s from %s [%s]", $nick, $channel, $msg);
 		printf "[%s] ".colour("-", "94")."!".colour("-", "94")." Recieved KICK by %s from %s [%s]\n",
-			print_time(), $nick, $channel, $msg if (!$silent);
+			print_time(), $nick, $channel, $msg 
+			unless $c->get('silent');
 		return;
 	}
 
 	irclog('status' => sprintf "-!- %s was kicked from %s by %s [%s]", $to, $channel, $nick, $msg);
 	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." %s was kicked from %s by %s [%s]\n", 
-		print_time(), colour($to, '96'), $channel, $nick, $msg if ($verbose);
+		print_time(), colour($to, '96'), $channel, $nick, $msg 
+		if $c->get('verbose');
 }
 
-## Trap routines
+## ABORT
+# Trap routine for SIGINT.
+# Params: N/A
+# Return: N/A
 sub ABORT {
 	irclog('status' => sprintf "-!- Log closed %s", scalar localtime);
 	print "Caught Interrupt (^C), Aborting\n";
 	# Messy as hell, but fast!
-	$irc->disconnect if ($irc);
-	$dbh->disconnect or warn("Couldn't disconnect from database: $dbh->errstr") if ($dbh);
 	exit(1);
 }
 

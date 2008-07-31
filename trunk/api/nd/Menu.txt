@@ -1,0 +1,80 @@
+Format: 1.35
+
+
+# You can add a title and sub-title to your menu like this:
+# Title: [project name]
+# SubTitle: [subtitle]
+
+# You can add a footer to your documentation like this:
+# Footer: [text]
+# If you want to add a copyright notice, this would be the place to do it.
+
+
+# --------------------------------------------------------------------------
+# 
+# Cut and paste the lines below to change the order in which your files
+# appear on the menu.  Don't worry about adding or removing files, Natural
+# Docs will take care of that.
+# 
+# You can further organize the menu by grouping the entries.  Add a
+# "Group: [name] {" line to start a group, and add a "}" to end it.
+# 
+# You can add text and web links to the menu by adding "Text: [text]" and
+# "Link: [name] ([URL])" lines, respectively.
+# 
+# The formatting and comments are auto-generated, so don't worry about
+# neatness when editing the file.  Natural Docs will clean it up the next
+# time it is run.  When working with groups, just deal with the braces and
+# forget about the indentation and comments.
+# 
+# --------------------------------------------------------------------------
+
+
+Group: Anna  {
+
+   File: Config.pm  (lib/Anna/Config.pm)
+   File: Connection.pm  (lib/Anna/Connection.pm)
+   File: CTCP.pm  (lib/Anna/CTCP.pm)
+   File: DB.pm  (lib/Anna/DB.pm)
+   File: Debug.pm  (lib/Anna/Debug.pm)
+   File: irclog  (lib/Anna/Output.pm)
+   File: Log.pm  (lib/Anna/Log.pm)
+   File: Module.pm  (lib/Anna/Module.pm)
+   File: Utils.pm  (lib/Anna/Utils.pm)
+   }  # Group: Anna
+
+Group: Blib  {
+
+   File: Config.pm  (tmp/blib/lib/Anna/Config.pm)
+   File: Connection.pm  (tmp/blib/lib/Anna/Connection.pm)
+   File: CTCP.pm  (tmp/blib/lib/Anna/CTCP.pm)
+   File: DB.pm  (tmp/blib/lib/Anna/DB.pm)
+   File: Debug.pm  (tmp/blib/lib/Anna/Debug.pm)
+   File: irclog  (tmp/blib/lib/Anna/Output.pm)
+   File: Log.pm  (tmp/blib/lib/Anna/Log.pm)
+   File: Module.pm  (tmp/blib/lib/Anna/Module.pm)
+   File: Utils.pm  (tmp/blib/lib/Anna/Utils.pm)
+   }  # Group: Blib
+
+Group: Lib  {
+
+   File: Config.pm  (tmp/lib/Anna/Config.pm)
+   File: Connection.pm  (tmp/lib/Anna/Connection.pm)
+   File: CTCP.pm  (tmp/lib/Anna/CTCP.pm)
+   File: DB.pm  (tmp/lib/Anna/DB.pm)
+   File: Debug.pm  (tmp/lib/Anna/Debug.pm)
+   File: irclog  (tmp/lib/Anna/Output.pm)
+   File: Log.pm  (tmp/lib/Anna/Log.pm)
+   File: Module.pm  (tmp/lib/Anna/Module.pm)
+   File: Utils.pm  (tmp/lib/Anna/Utils.pm)
+   }  # Group: Lib
+
+Group: Index  {
+
+   Index: Everything
+   Constant Index: Constants
+   File Index: Files
+   Function Index: Functions
+   Variable Index: Variables
+   }  # Group: Index
+
