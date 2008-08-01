@@ -8,7 +8,7 @@ my $m = Anna::Module->new('lart');
 $m->bindcmd('addlart', 'addlart')->bindcmd('lart', 'lart');
 
 sub addlart {
-	my ($irc, $target, $m, $lart) = @_[IRC, CHAN, MOD, ARG];
+	my ($irc, $target, $lart) = @_[IRC, CHAN, ARG];
 	
 	if ($lart !~ /##/) {
 		$irc->yield(privmsg => $target => 
@@ -16,7 +16,7 @@ sub addlart {
 	}
 	
 	my $query = "INSERT INTO larts (lart) VALUES (?)";
-	my $sth = $m->db->->prepare($query);
+	my $sth = Anna::DB->new('lart')->prepare($query);
 	$sth->execute($lart);
 	
 	$irc->yield(privmsg => $target => "LART inserted!");
@@ -24,34 +24,35 @@ sub addlart {
 
 
 sub lart {
-	my ($irc, $target, $nick, $m, $luser) = @_[IRC, CHAN, NICK, MOD, ARG];
+	my ($irc, $target, $nick, $luser) = @_[IRC, CHAN, NICK, ARG];
 	
-	$irc->yield(privmsg => $target => $nick . ": NAY THOU!")
-		if (lc $luser eq lc $irc->nick_name);
+	if (lc $luser eq lc $irc->nick_name) {
+		$irc->yield(privmsg => $target => $nick . ": NAY THOU!");
+		return;
+	}
 	$luser = $nick if ($luser eq 'me');
 	
 	my $query = "SELECT * FROM larts";
-	my $sth = $m->db->prepare($query);
+	my $sth = Anna::DB->new('lart')->prepare($query);
 	$sth->execute();
 
 	my @larts;
 	while (my $res = $sth->fetchrow_hashref) {
-		push(@larts, $res->{'lart'});
+		push(@larts, $res->{lart});
 	}
 	
 	my $lart = $larts[rand scalar @larts];
 	$lart =~ s/##/$luser/;
 	
-7	
 	$irc->yield(ctcp => $target => 'ACTION '.$lart);
 }
 
 sub init {
-	my $m = shift;
+	my $db = Anna::DB->new('lart');
 
-	$m->db->do('CREATE TABLE IF NOT EXISTS larts (id INTEGER PRIMARY KEY UNIQUE, lart TEXT);';
+	$db->do('CREATE TABLE IF NOT EXISTS larts (lart)');
 	my @larts = (
-		"stabs ##",
+		q|stabs ##|,
 		"throws a pile of dirt at ##",
 		"throws seven litres of hot ice tea at ##",
 		"fills ##'s mouth with lead",
@@ -75,8 +76,8 @@ sub init {
 		"beats ## up with a cluebat",
 		"shoots ## with a syringe full of Bird Flu!"
 	);
+	my $sth = $db->prepare("INSERT OR IGNORE INTO larts (lart) VALUES (?)");
 	foreach my $lart (@larts) {
-		my $sth = $m->db->prepare("INSERT OR REPLACE INTO larts (lart) VALUES (?)");
-		$sth->exec($lart);
+		$sth->execute($lart);
 	}
 }
