@@ -12,6 +12,7 @@ use Exporter;
 our @ISA = qw(Exporter);
 use Anna::Config;
 
+
 # sub: dummy
 # Do I really need to do this?
 sub dummy {}
@@ -33,6 +34,13 @@ sub _default {
 	my ($event, $args) = @_[ARG0 .. $#_];
 	
 	my $conf = new Anna::Config;
+	
+	# If debug is turned on, we already know that Data::Dumper is available
+	if (Anna::Config->new->get('debug') && !defined(&Dumper)) {
+		require Data::Dumper;
+		Data::Dumper->import(qw(Dumper));
+	}
+
 	# _default called before _start had time to populate $heap
 	# we can't know whether user wants debug output.
 	return 0 unless (ref $conf);

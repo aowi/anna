@@ -86,13 +86,13 @@ $config->parse_configfile($ENV{'HOME'}."/.anna/config") if (-r $ENV{'HOME'}."/.a
 
 # Enable debug stuff
 if ($config->get('debug')) {
-	eval { use Data::Dumper; };
+	eval { require Data::Dumper; };
 	if ($@) {
 		error_print "Please install module Data::Dumper if you want to run Anna^ in debugging mode";
 		$config->toggle('debug');
 	} else {
-#		sub POE::Kernel::ASSERT_DEFAULT () { 1 }
-#		sub POE::Kernel::TRACE_SIGNALS ()  { 1 }
+		sub POE::Kernel::ASSERT_DEFAULT () { 1 }
+		sub POE::Kernel::TRACE_SIGNALS ()  { 1 }
 	}
 }
 
