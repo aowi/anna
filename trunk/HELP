@@ -74,8 +74,6 @@ ircname = <str>:	the ircname (see whois output). Default is Boten Anna
 nspasswd = <str>:	if set, Anna^ will identify herself with Nickserv upon
 			successful connection. Anna^ will also reclaim her 
 			nick if it was taken.
-dbfile = <str>:		path of the database-file Anna^ will use. Default is
-			~/.anna/anna.db
 colour = <bool>:	if true, Anna^ will colour the output to the terminal 
 			(note: this is not the output to the IRC-server)
 silent = <bool>:	if true, Anna^ will stay very silent, only informing 
@@ -88,7 +86,7 @@ trigger = <str>:	this is the trigger all commands should be prefixed
 bannedwords = <str>:	a space-separated list of banned words. You can use 
 			regexp-like features here. If Anna^ sees a banned word
 			in a public channel, she will kick the user.
-voice_auth = <bool>:	if true, Anna^ will voice authenticated users.
+voiceauth = <bool>:	if true, Anna^ will voice authenticated users.
 
 Any settings in the local configuration file automatically overwrites the 
 systemwide file.

@@ -76,7 +76,6 @@ $config->parse_configfile($ENV{'HOME'}."/.anna/config") if (-r $ENV{'HOME'}."/.a
 		'nspasswd|P=s' => \$conf{'nspasswd'},
 		'silent!' => \$conf{'silent'},
 		'debug|d!' => \$conf{'debug'},
-		'dbfile|D=s' => \$conf{'dbfile'},
 		'version|V' => sub { version(0) },
 		'help|h|?' => sub { usage(0) }
 	) or die( usage(1) );
@@ -567,7 +566,7 @@ sub bot_auth {
 			if ($rv) {
 				# bot_op returned text, so we didn't get op.
 				bot_voice($heap, $from) 
-					if Anna::Config->new->get('voice_auth');
+					if Anna::Config->new->get('voiceauth');
 			}
 			return sprintf "Welcome back %s", $user;
 		}
@@ -1241,7 +1240,7 @@ sub bot_voice {
 	my ($nick, $host) = split(/!/, $from);
 	return "Error - you must authenticate first" unless defined $heap->{auth}->{$host};
 	
-	return "Error - Thou mvst remain voiceless" unless $c->get('voice_auth');
+	return "Error - Thou mvst remain voiceless" unless $c->get('voiceauth');
 	$heap->{irc}->yield(mode => $c->get('channel') => "+v" => $nick);
 	return;
 }

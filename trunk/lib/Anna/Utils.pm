@@ -96,7 +96,6 @@ Mandatory arguments to long options are mandatory for short options too.
                                 successful connection.
 
       --no-color                don't use colours in terminal.
-  -D, --dbfile <file>           specify the SQLite3 database-file.
   -v, --verbose                 print verbose information.
       --silent                  print nothing except critical errors.
   -V, --version                 print version information and exit.

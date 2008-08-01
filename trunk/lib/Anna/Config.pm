@@ -18,7 +18,6 @@ my %config = (
 	port		=> 6667,
 	channel		=> "#frokostgruppen",
 	name		=> "Boten Anna",
-	dbfile		=> $ENV{'HOME'}."/.anna/anna.db",
 	colour		=> 1,
 	trigger		=> "!",
 	debug		=> 0,
@@ -90,7 +89,6 @@ sub parse_configfile {
 			$self->set('name', $2) if (lc($1) eq 'ircname');
 			$self->set('nspasswd', $2) if (lc($1) eq 'nspasswd');
 			# Script part
-			$self->set('dbfile', $2) if (lc($1) eq 'dbfile');
 			$self->set('colour', $2) if (lc($1) eq 'colour');
 			$self->set('silent', $2) if (lc($1) eq 'silent');
 			$self->set('verbose', $2) if (lc($1) eq 'verbose');
@@ -104,7 +102,7 @@ sub parse_configfile {
 					push @{$config{'bannedwords'}}, $_;
 				}
 			}
-			$self->set('voice_auth', $2) if (lc($1) eq 'voice_auth');
+			$self->set('voiceauth', $2) if (lc($1) eq 'voiceauth');
 #                       $require_ops = $2 if (lc($1) eq 'require op');
 #                       $require_voice = $2 if (lc($1) eq 'require voice');
 		} else {
