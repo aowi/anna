@@ -23,13 +23,13 @@ our %modules;
 # modules, to avoid having to keep track of argument order, and to allow us to
 # reorder or add more args later, without breaking existing modules.
 # Idea stolen from POE, btw :)
-sub IRC  () {  0 }
-sub CHAN () {  1 }
-sub NICK () {  2 }
-sub HOST () {  3 }
-sub TYPE () {  4 }
-sub MOD  () {  5 }
-sub ARG  () {  6 }
+sub IRC  () {  0 } # irc-object
+sub CHAN () {  1 } # channel the message is from
+sub NICK () {  2 } # nick of the sender
+sub HOST () {  3 } # host of the sender
+sub TYPE () {  4 } # type of message/event (privmsg, public, join, part, ...)
+sub MOD  () {  5 } # module-object
+sub ARG  () {  6 } # any arguments exactly as they were typed (no processing is done)
 
 # sub: new
 # Create new instance of Anna::Module. Modules can use this to register for 
