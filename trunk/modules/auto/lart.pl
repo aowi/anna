@@ -25,7 +25,7 @@ sub addlart {
 
 sub lart {
 	my ($irc, $target, $nick, $luser) = @_[IRC, CHAN, NICK, ARG];
-	
+	$luser ||= $nick;
 	if (lc $luser eq lc $irc->nick_name) {
 		$irc->yield(privmsg => $target => $nick . ": NAY THOU!");
 		return;
