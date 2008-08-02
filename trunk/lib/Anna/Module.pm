@@ -375,18 +375,12 @@ sub loadfullpath {
 		warn_print(sprintf("loadfullpath called with non-existent file: %s", $path));
 		return 0;
 	}
-	my $code;
-	open(MODULE, "<", $path) or croak $!;
-	while (<MODULE>) {
-		$code .= $_;
-	}
-	close(MODULE) or croak $!;
 	
 	verbose_print(sprintf("Loading module %s", $m));
 
 	eval qq{
 		package Anna::Module::$m; 
-		$code; 
+		require qq|$path|;
 		&init if (defined &init);
 	};
 	if ($@) {
