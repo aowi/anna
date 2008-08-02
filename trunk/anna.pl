@@ -252,9 +252,12 @@ sub _start {
 	# Get stuff into the heap
 	$heap->{log} = $log;
 	$heap->{irc} = $irc;
-
+	
+	# Load modules from homedir first, so they will mask system-wide modules
 	Anna::Module::loaddir(Anna::Utils->CONFIGDIR."/modules/core/");
 	Anna::Module::loaddir(Anna::Utils->CONFIGDIR."/modules/auto/");
+	Anna::Module::loaddir("/usr/share/anna/modules/core/");
+	Anna::Module::loaddir("/usr/share/anna/modules/auto/");
 	# Connect
 	$kernel->yield("connect");
 }

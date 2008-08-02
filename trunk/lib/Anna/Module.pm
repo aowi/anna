@@ -270,8 +270,10 @@ sub loaddir {
 	my $dir = shift;
 	opendir(DIR, $dir) or croak $!;
 	while (defined(my $file = readdir(DIR))) {
-		if ($file =~ m/.pl$/) {
-			load($file);
+		if ($file =~ m/[.]pl$/) {
+			my $m = $file;
+			$m =~ s/[.]pl$//;
+			loadfullpath($dir."/".$file, $m);
 		}
 	}
 	closedir(DIR) or croak $!;
@@ -320,48 +322,72 @@ sub do_cmd {
 
 # sub: load
 # Takes a module-name or a filename and scans for a module with that name in Anna's 
-# module-directories. If a module is found, it is loaded (read and eval'd)
+# module-directories. If a module is found, call loadfullpath on it
 #
 # Parameters:
 # 	m - module name or filename
 # 
 # Returns:
-# 	1 on successfull loading, 0 on failure
+# 	1 on successful loading, 0 on failure
 sub load {
 	unless (@_ >= 1) {
 		carp "load takes one parameter";
 		return 0;
 	}
 	my $m = shift;
+		
 	$m =~ s/[.]pl$//;
 
+	my @path = (
+		Anna::Utils->CONFIGDIR."/modules/", 
+		Anna::Utils->CONFIGDIR."/modules/core/", 
+		Anna::Utils->CONFIGDIR."/modules/auto/",
+		"/usr/share/anna/modules/", 
+		"/usr/share/anna/modules/core/", 
+		"/usr/share/anna/modules/auto/"
+	);
+	
+	my ($found, $ret) = 0;
+	foreach my $p (@path) {
+		if (-f $p.$m.".pl") {
+			$ret = loadfullpath($p.$m.".pl", $m); 
+			$found = 1;
+			last;
+		}
+	}
+	if ($found) {
+		return $ret;
+	} else {
+		warn_print(sprintf("Module %s not found", $m));
+		return 0;
+	}
+}
+
+sub loadfullpath {
+	my ($path, $m) = @_;
+	
 	if (module_loaded($m)) {
 		carp "Module $m already loaded";
 		return 0;
 	}
-	my $code;
-	my @path = ("/.anna/modules/", "/.anna/modules/core/", "/.anna/modules/auto/");
-	foreach my $p (@path) {
-		if (-f $ENV{'HOME'}.$p.$m.".pl") {
-			open(MODULE, "<", $ENV{'HOME'}.$p.$m.".pl") or croak $!;
-			while (<MODULE>) {
-				$code .= $_;
-			}
-			close(MODULE) or croak $!;
-			last;
-		}
-	}
-	unless ($code) {
-		carp "Can't find $m";
+
+	unless (-f $path) {
+		warn_print(sprintf("loadfullpath called with non-existent file: %s", $path));
 		return 0;
 	}
-	if (Anna::Config->new->get('verbose')) {
-		printf "[%s] Loading module %s\n", print_time, $m;
+	my $code;
+	open(MODULE, "<", $path) or croak $!;
+	while (<MODULE>) {
+		$code .= $_;
 	}
+	close(MODULE) or croak $!;
+	
+	verbose_print(sprintf("Loading module %s", $m));
+
 	eval qq{
 		package Anna::Module::$m; 
 		$code; 
-		&init if (defined &init)
+		&init if (defined &init);
 	};
 	if ($@) {
 		carp "Failed to load $m: $@";
