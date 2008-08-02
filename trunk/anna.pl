@@ -33,7 +33,6 @@ use Anna::Log;
 use Anna::CTCP;
 use Anna::DB;
 use Anna::Module;
-use Data::Dumper; # TO BE REMOVED
 use File::Copy;
 use Term::ReadKey;
 use POE;
@@ -90,9 +89,6 @@ if ($config->get('debug')) {
 	if ($@) {
 		error_print "Please install module Data::Dumper if you want to run Anna^ in debugging mode";
 		$config->toggle('debug');
-	} else {
-		sub POE::Kernel::ASSERT_DEFAULT () { 1 }
-		sub POE::Kernel::TRACE_SIGNALS ()  { 1 }
 	}
 }
 

@@ -6,7 +6,7 @@ use Module::Build;
      requires => {
                   'perl'				=> '5.8.8',
 				  'File::Copy'			=> 0,
-				  'GetOpt::Long'		=> 0,
+				  'Getopt::Long'		=> 0,
 				  'Carp'				=> 0,
 				  'POE'					=> '0.9500',
 				  'POE::Component::IRC'	=> '5.16',
