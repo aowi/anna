@@ -19,6 +19,7 @@ HTML::Entities v.1.35
 DBI v.1.52 and up
 DBD::SQLite v.1.12
 LWP::UserAgent v.5.805
+Data::Dumper (optional, used if you enable debugging at runtime)
 
 == Installation ==
 1) tar zxvf anna-$VERSION.tar.gz

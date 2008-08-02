@@ -13,4 +13,4 @@ modules_install:
 	cp -r modules/* /home/arkanoid/.anna/modules/
 
 docs:
-	/usr/bin/NaturalDocs -i . -o html api/ -p api/nd/ -xi modules/ -do 
+	/usr/bin/NaturalDocs -i . -o html api/ -p api/nd/ -do 

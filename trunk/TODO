@@ -2,8 +2,7 @@ TODO for module-refactoring:
 * Implement support for binding regexps
   * Add support for specifying flags
 * Implement support for binding to specific events
-* Implement onload-routine that is called when a module is loaded
-* --||-- onunload, onwhatelse?
+* Implement onunload, onwhatelse?
 * Dynamic module-loading (that is, allow admins to issue 'load foo' to load 
   module foo)
   For the time being, the loading-stuff is working, but has to be called 
@@ -11,6 +10,7 @@ TODO for module-refactoring:
 * Flesh out a sane interface for module-building 
 * Take a look at the eggdrop interface
   http://www.eggheads.org/support/egghtml/1.6.18/tcl-commands.html
+  and the rbot interface (it's probably a bit better)
   Anna should load all modules from core/ and auto/ pr. default, when starting.
   
   Perhaps we should make a loader-module, that takes care of from-irc-loading. 

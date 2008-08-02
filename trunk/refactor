@@ -38,6 +38,13 @@ the specific command. On unload, the namespace Anna::Module::module_name is
 destroyed (is this possible?) [I think not, but we might be able to override it
 with an empty enviroment]
 
+Each module has it's own sqlite database under CONFIGDIR/.anna/registry/ that 
+can be used for persistent storage. A database handle is included in the 
+module-object that is passed along on each command/event/regexp-bound sub.
+You can also request a database handle with Anna::DB->new('module_name'). So 
+for instance Anna::DB->new('haiku') will return a database handle for the haiku 
+module.
+
 Possible to handle commands with POE-events using postback and callback 
 instead? Might make module-loading a whole lot easier.
 
