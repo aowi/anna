@@ -11,6 +11,7 @@ use Anna::DB;
 use Anna::Config;
 use Anna::Utils;
 use Carp;
+use Symbol qw(delete_package);
 
 # var: %modules
 # Global, that holds the name of all modules with registered events. Don't
@@ -371,11 +372,6 @@ sub loadfullpath {
 		return 0;
 	}
 
-	unless (-f $path) {
-		warn_print(sprintf("loadfullpath called with non-existent file: %s", $path));
-		return 0;
-	}
-	
 	verbose_print(sprintf("Loading module %s", $m));
 
 	eval qq{
@@ -385,7 +381,7 @@ sub loadfullpath {
 	};
 	if ($@) {
 		carp "Failed to load $m: $@";
-		# XXX cleanup possible cruft from database
+		unload $m; # Cleanup cruft
 		return 0;
 	}
 	package Anna::Module;
@@ -393,7 +389,7 @@ sub loadfullpath {
 }
 
 # sub: unload
-# Unloads a module (for now, just deletes the commands associated with that module-name
+# Unloads a module. Cleans database and scrubs package namespace (with delete_package from Symbol)
 #
 # Parameters:
 # 	m - name of module
@@ -406,6 +402,9 @@ sub unload {
 		return 0;
 	}
 	my $m = shift;
+	verbose_print(sprintf("Unloading module %s", $m));
+	delete_package('Anna::Module::'.$m);
+	delete $modules{$m};
 	my $dbh = new Anna::DB;
 	unless ($dbh) {
 		carp "Unable to obtain DB handle: $DBI::errstr";
