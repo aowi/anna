@@ -1,13 +1,24 @@
 TODO for module-refactoring:
+* Make module loading a bit saner.
+  Three routines: loaddir, loadmod and loadpath. 
+  loaddir and loadmod are wrappers, that call loadpath with appropriate paths.
+  loaddir and loadmod should only call loadpath if the module isn't already loaded.
+  loadpath returns 1 or 0 depending on success.
+
 * Implement support for binding regexps
   * Add support for specifying flags
+
 * Implement support for binding to specific events
+
 * Implement onunload, onwhatelse?
+
 * Dynamic module-loading (that is, allow admins to issue 'load foo' to load 
   module foo)
   For the time being, the loading-stuff is working, but has to be called 
   manually from anna.pl. 
+
 * Flesh out a sane interface for module-building 
+
 * Take a look at the eggdrop interface
   http://www.eggheads.org/support/egghtml/1.6.18/tcl-commands.html
   and the rbot interface (it's probably a bit better)
@@ -23,6 +34,25 @@ TODO for module-refactoring:
 
 * Move existing stuff into modules
 
-Misc
-----
-Improve nickserv support to allow custom commands or something like that.
+* Proper first-run dialog that allows you to
+ * Create root-user
+ * Create basic config (network, channel)
+ * Nickserv info
+ * Other stuff?
+
+
+Modules todo:
+ * Nickserv - handle authentication towards nickserv
+   Simple interface and possibility to set specific nickserv command
+ * Auth - handle authentication towards the bot
+   * Modules can check if a user is in a given role
+     e.g. $auth->user_can('Nick::Change'); returns true if the user is in the Nick::Change role.
+   * Auth itself handles authentication, keeping track of sessions and mapping users to roles
+   * Root-user can attach roles to users
+     e.g. !auth add $user to $role
+   * Subroles. If a user has Role1 she automatically has Role1::*
+     Thus, the root-user has *, another user might have Nick and thus also Nick::Change
+   * Unregistered users are 'anonymous'. So !auth add anonymous to RSS::Addfeed grants everyone access to RSS::Addfeed
+   * !auth add $user to * grants $user Root-access (ie. access to every command, feature and so on)
+ * Channel - handle joins/parts
+ * Existing modules
