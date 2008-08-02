@@ -1,60 +1,56 @@
 Anna^ IRC Bot CHANGELOG
 
+Current
+	- {debug,warn,error,verbose}_print added.
+	- Default configuration readded to lib/Anna/Config.pm
+	- Use Module::Build instead of my dodgy makefile
+	- dbfile option removed. Your DB is locked in ~/.anna/anna.db. Muhahaha!
+	- Module loading refactored
 
-== Older changelog ==
-0.01: Sun Jul 23 22:14:49 CEST 2006
-	- Initial version by arkanoid
+0.50 Thu Jul 31 23:06:30 CEST 2008
+    - NOT RELEASED
+	- First step towards splitting out stuff into libraries and modules
+	- Nothing works
 
-0.10 Tue Aug  8 22:05:13 CEST 2006
-	- Bot works now, and actually does stuff - Woo!
-	- Most of the IRC protocol and CTCP implemented
-	- Most settings can be tweaked from command-line
-	- SQLite integrated
-	- Several replies to various phrases added
-	- Some functions added:
-		- Haiku - print random haikus to a channel or in privmsg
-		- Addhaiku - add a haiku to the database
-		- Lart - print random insult against a luser
-		- Addlart - add insult to the database
-		- Seen - query for information about users and when they last 
-		  were active
-		- Up - print uptime of the bot
-		- Order - order some beer from the bar... or what about some 
-		  ice-cold pepsi? 
-
-0.20 Sat Sep  2 21:43:07 CEST 2006
-	- Lastseen now handles quits, parts and joins correctly
-	- Auto-op'ing of users. Currently maintained in the file. DB interface
-	  is planned.
-	- Kicks are now shown correctly
-	- New functions:
-		- Question - Anna^ now responds to any message to her that ends
-		  with a ?. She also answers !question <question>
-		- Roulette - Or rather... russian roulette. Lose, and you'll 
-		  get kicked (provided Anna^has the rights).
-		  Type '!roulette' and get shot. Type '!reload' if you're a 
-		  weenie.
-		- Bash - type !bash #<number> or !bash random and Anna^ returns
-		  the corresponding quote (or a random one) from the bash quote
-		  database (http://bash.org).
-		- Quote - Save quotes and displays random quotes on !quote 
-		- Karma - That's right, show the world who/what you like (and 
-		  dislike) through this brand new and unoriginal karma system 
-		  (work--, anyone?)
-		- Fortunes - yep, that's right. If the fortune app is installed
-		  and in your path, your can use !fortune
-		- Google - search google. Anna^ returns the first result found.
-	- New requirements:
-		- LWP::UserAgent module is now required as well. It is used for 
-		  bash and google functions and will be used for other website-
-		  interaction later.
-	- Several minor cleanups
-	- Fixed !order-bug. !order <item> for <nick> now works correctly
-	- Running Anna^ with --help or -h on the command-line now prints usage
-	  information
-
-0.21 Wed Sep  6 19:29:16 CEST 2006
-	- Bugfix - parsing of command-line now works properly!
+0.40 Thu May 17 17:02:20 CEST 2007
+	- More stable Makefile
+	- Altered !search to work with only a keyword (no table). !search 
+	  <keyword> is equivalent to !search all <keyword>.
+	- POE implemented with a lot of minor internal changes and cleanup
+	- Handle kills appropriately (for now, we will reconnect... this is 
+	  probably bound to change)
+	- Added debug flag to toggle debug output on/off
+	- Print a list of users when joining a channel
+	- Altered behaviour of search mechanism. !search <keyword> is now 
+	  equivalent to !search all <keyword>
+	- Anna^ sets mode +i on successful connect from now on.
+	- When parsing messages, handle [ ,:-] (space, comma, colon, dash) as
+	  possible nick/message separators.
+	- Logging: Anna^ can now log stuff to logfiles. ~/.anna/logs/anna.log 
+	  logs main bot events, while activity in respective channels are 
+	  logged as  network/#channel.log. The same goes for privmsgs.
+	  Logging can be controlled from the config-file (see docs for more 
+	  info)
+	- Session-handling. It is now possible to register with Anna^. 
+	  Registered users can be voiced or opped or made bot admins (grants
+	  additional rights to control Anna^) See docs for more info.
+	  On first-run, Anna^ will let you create a root-user for the bot.
+	- Anna^ makes a backup-copy of the database, before attempting an 
+	  upgrade.
+	- The escape_shell()-function have been abandoned in favour of perls 
+	  builtin qx()
+	- Bugfix: Anna^ no longer uses any hardcoded paths for the database
+	- Bugfix: Anna^ only attempts to parse a config-file, if the 
+	  permissions are correct. In the future, we might throw a warning when
+	  permissions are wrong.
+	- Bugfix: handle quits/parts with empty statements without warnings.
+	- Bugfix: missed param in on_topic
+	- Bugfix: handle parts without a message
+	- Bugfix: nix'd warning in googlesearch
+	- Bugfix: on first run, don't attempt to connect to the database 
+	  before  it's copied over
+	- Bugfix: make !lart me work properly again
+	- Misc. minor bugfixes
 
 0.30 Sat Nov 25 19:47:58 CET 2006
 	- Anna^ now recovers her nick correctly. Rejoice! (Bug since 0.10).
@@ -129,47 +125,56 @@ Anna^ IRC Bot CHANGELOG
 	- New requirements:
 		- Perl module HTML::Parser (for HTML::Entities)
 
-0.40 Thu May 17 17:02:20 CEST 2007
-	- More stable Makefile
-	- Altered !search to work with only a keyword (no table). !search 
-	  <keyword> is equivalent to !search all <keyword>.
-	- POE implemented with a lot of minor internal changes and cleanup
-	- Handle kills appropriately (for now, we will reconnect... this is 
-	  probably bound to change)
-	- Added debug flag to toggle debug output on/off
-	- Print a list of users when joining a channel
-	- Altered behaviour of search mechanism. !search <keyword> is now 
-	  equivalent to !search all <keyword>
-	- Anna^ sets mode +i on successful connect from now on.
-	- When parsing messages, handle [ ,:-] (space, comma, colon, dash) as
-	  possible nick/message separators.
-	- Logging: Anna^ can now log stuff to logfiles. ~/.anna/logs/anna.log 
-	  logs main bot events, while activity in respective channels are 
-	  logged as  network/#channel.log. The same goes for privmsgs.
-	  Logging can be controlled from the config-file (see docs for more 
-	  info)
-	- Session-handling. It is now possible to register with Anna^. 
-	  Registered users can be voiced or opped or made bot admins (grants
-	  additional rights to control Anna^) See docs for more info.
-	  On first-run, Anna^ will let you create a root-user for the bot.
-	- Anna^ makes a backup-copy of the database, before attempting an 
-	  upgrade.
-	- The escape_shell()-function have been abandoned in favour of perls 
-	  builtin qx()
-	- Bugfix: Anna^ no longer uses any hardcoded paths for the database
-	- Bugfix: Anna^ only attempts to parse a config-file, if the 
-	  permissions are correct. In the future, we might throw a warning when
-	  permissions are wrong.
-	- Bugfix: handle quits/parts with empty statements without warnings.
-	- Bugfix: missed param in on_topic
-	- Bugfix: handle parts without a message
-	- Bugfix: nix'd warning in googlesearch
-	- Bugfix: on first run, don't attempt to connect to the database 
-	  before  it's copied over
-	- Bugfix: make !lart me work properly again
-	- Misc. minor bugfixes
+0.21 Wed Sep  6 19:29:16 CEST 2006
+	- Bugfix - parsing of command-line now works properly!
 
-0.50 Thu Jul 31 23:06:30 CEST 2008
-    - NOT RELEASED
-	- First step towards splitting out stuff into libraries and modules
-	- Nothing works
+0.20 Sat Sep  2 21:43:07 CEST 2006
+	- Lastseen now handles quits, parts and joins correctly
+	- Auto-op'ing of users. Currently maintained in the file. DB interface
+	  is planned.
+	- Kicks are now shown correctly
+	- New functions:
+		- Question - Anna^ now responds to any message to her that ends
+		  with a ?. She also answers !question <question>
+		- Roulette - Or rather... russian roulette. Lose, and you'll 
+		  get kicked (provided Anna^has the rights).
+		  Type '!roulette' and get shot. Type '!reload' if you're a 
+		  weenie.
+		- Bash - type !bash #<number> or !bash random and Anna^ returns
+		  the corresponding quote (or a random one) from the bash quote
+		  database (http://bash.org).
+		- Quote - Save quotes and displays random quotes on !quote 
+		- Karma - That's right, show the world who/what you like (and 
+		  dislike) through this brand new and unoriginal karma system 
+		  (work--, anyone?)
+		- Fortunes - yep, that's right. If the fortune app is installed
+		  and in your path, your can use !fortune
+		- Google - search google. Anna^ returns the first result found.
+	- New requirements:
+		- LWP::UserAgent module is now required as well. It is used for 
+		  bash and google functions and will be used for other website-
+		  interaction later.
+	- Several minor cleanups
+	- Fixed !order-bug. !order <item> for <nick> now works correctly
+	- Running Anna^ with --help or -h on the command-line now prints usage
+	  information
+
+0.10 Tue Aug  8 22:05:13 CEST 2006
+	- Bot works now, and actually does stuff - Woo!
+	- Most of the IRC protocol and CTCP implemented
+	- Most settings can be tweaked from command-line
+	- SQLite integrated
+	- Several replies to various phrases added
+	- Some functions added:
+		- Haiku - print random haikus to a channel or in privmsg
+		- Addhaiku - add a haiku to the database
+		- Lart - print random insult against a luser
+		- Addlart - add insult to the database
+		- Seen - query for information about users and when they last 
+		  were active
+		- Up - print uptime of the bot
+		- Order - order some beer from the bar... or what about some 
+		  ice-cold pepsi? 
+
+0.01: Sun Jul 23 22:14:49 CEST 2006
+	- Initial version by arkanoid
