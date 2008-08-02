@@ -10,10 +10,11 @@ sub new {
 }
 
 sub identify {
+	my ($self, $user, $pass, $nick, $host);
 	if (ref $_[0]) {
-		my ($self, $user, $pass) = @_;
+		($self, $user, $pass, $nick, $host) = @_;
 	} else {
-		my ($user, $pass) = @_;
+		($user, $pass, $nick, $host) = @_;
 	}
 
 	my $query = "SELECT * FROM users WHERE username = ?";
@@ -22,12 +23,16 @@ sub identify {
 	if (my @row = $sth->fetchrow()) {
 		if (crypt($pass, substr($row[2], 0, 2)) eq $row[2]) {
 			# We have a match! Light it
-			$heap->{auth}->{$host} = { user => $user, nick => $nick };
+#			$heap->{auth}->{$host} = { user => $user, nick => $nick };
+			debug_print(sprintf("Nick %s [%s] successfully identified as %s", $nick, $host, $user));
 			return 1;
 		}
 	}
+	debug_print(sprintf("Nick %s [%s] failed identificatation as %s", $nick, $host, $user));
 	return 0;
 }
 sub register {}
 sub add_user_to_role {}
 sub user_can {}
+
+1;

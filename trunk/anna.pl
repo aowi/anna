@@ -33,6 +33,7 @@ use Anna::Log;
 use Anna::CTCP;
 use Anna::DB;
 use Anna::Module;
+use Anna::Auth;
 use File::Copy;
 use Term::ReadKey;
 use POE;
@@ -349,9 +350,7 @@ sub parse_message {
 		# Private message (p2p)
 		# This is meant for things that anna should _only_
 		# respond to in private (ie. authentications).
-		if ($msg =~ /^(\Q$trigger\E|)auth\s+(.*)$/) {
-			$out = bot_auth($heap, $2, $from);
-		} elsif ($msg =~ /^(\Q$trigger\E|)register\s+(.*?)\s+(.*)$/) {
+		if ($msg =~ /^(\Q$trigger\E|)register\s+(.*?)\s+(.*)$/) {
 			$out = bot_register($heap, $2, $3, $from);
 		} elsif ($msg =~ /^(\Q$trigger\E|)op$/i) {
 			$out = bot_op($heap, $from);
@@ -525,53 +524,6 @@ sub bot_addquote {
 	return "Quote inserted. Thanks ".$nick;
 }
 
-## bot_auth
-# takes four arguments - a username, a password, a host and the heap
-# Authenticates a user with anna and perform auto-op-check
-sub bot_auth {
-	my ($heap, $auth, $from) = @_;
-	return "Error - auth takes two parameters: username & password"
-		unless $auth;
-	return "Error - couldn't access the heap. This is most likely a bug" 
-		unless $heap;
-	return "Error - couldn't read your current host. This is most likely a software bug"
-		unless $from;
-	
-	my ($nick, $host) = split(/!/, $from);
-
-	my ($user, $pass);
-	# Accept auth <nick> <pass> as well as auth <pass> (use $nick in last 
-	# case)
-	if (trim($auth) =~ / /) {
-		($user, $pass) = split(/ /, trim($auth));
-	} else {
-		($user, $pass) = ($nick, trim($auth));
-	}
-	
-	return "Error - auth takes two parameters: username & password"
-		if (!$user || !$pass);
-	my $query = "SELECT * FROM users WHERE username = ?";
-	my $sth = Anna::DB->new->prepare($query);
-	$sth->execute($user);
-	if (my @row = $sth->fetchrow()) {
-		if (crypt($pass, substr($row[2], 0, 2)) eq $row[2]) {
-			# We have a match! Light it
-#			$heap->{auth}->{$host};
-			$heap->{$host}->{user} = $user;
-			$heap->{$host}->{nick} = $nick;
-
-			# Attempt to op the user (but do not print errors)
-			my $rv = bot_op($heap, $from);
-			if ($rv) {
-				# bot_op returned text, so we didn't get op.
-				bot_voice($heap, $from) 
-					if Anna::Config->new->get('voiceauth');
-			}
-			return sprintf "Welcome back %s", $user;
-		}
-	}
-	return "Error: wrong username or password";
-}
 
 =begin gtfo
 ## bot_dice

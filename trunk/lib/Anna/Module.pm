@@ -139,6 +139,36 @@ sub cmd_exists_in_db {
 	$sth->fetchrow ? return 1 : return 0;
 }
 
+# Func: msg_exists_in_db
+# Checks if a msg already exists in the modules-table
+#
+# Parameters:
+#    msg - msg to scan for
+#
+# Returns:
+#    0 if the command doesn't exists, 1 if it's there
+sub msg_exists_in_db {
+	unless (@_ >= 1) {
+		carp "msg_exists_in_db takes one parameter";
+		return 0;
+	}
+	my $msg = shift;
+	if (ref $msg) {
+		my $pkg = $msg;
+		$msg = shift;
+	}
+	my $dbh = new Anna::DB;
+	unless ($dbh) {
+		carp "Couldn't get database-handle: $DBI::errstr";
+		return 0;
+	}
+	my $sth = $dbh->prepare(qq{
+		SELECT value FROM modules WHERE type = 'msg' AND value = ?
+	});
+	$sth->execute($msg);
+	$sth->fetchrow ? return 1 : return 0;
+}
+
 
 # sub: bindcmd
 # Used as a method to bind a command to a subroutine
@@ -168,6 +198,42 @@ sub bindcmd {
 		undef, ($mod, $cmd, $sub));
 	unless (defined $rv) {
 		carp "Failed to add command $cmd to DB: $DBI::errstr";
+		return $pkg;
+	}
+	return $pkg;
+}
+
+# sub: bindmsg
+# Used as a method to bind a privmsg to a subroutine
+# Anna^ will not trigger this on messages sent to public channels. Only 
+# messages that are sent directly to Anna^
+#
+# Parameters:
+# 	msg - the msg to listen for
+# 	sub - the sub to call when cmd is found
+#
+# Returns:
+# 	The object (caller)
+sub bindmsg {
+	unless (@_ == 3) {
+		carp "bindmsg takes two parameters: command and sub";
+		return $_[0];
+	}
+	my $pkg = shift;
+	my ($msg, $sub) = @_;
+	my $mod = $pkg->{'name'};
+	if (msg_exists_in_db($msg)) {
+		carp "Failed to bind msg $msg: Already existing";
+		return $pkg;
+	}
+	debug_print(sprintf("Binding privmsg %s to %s::%s", $msg, $mod, $sub));
+	my $dbh = new Anna::DB or return $pkg;
+	my $rv = $dbh->do(
+		"INSERT INTO modules (name, type, value, sub) 
+		VALUES (?, 'msg', ?, ?)", 
+		undef, ($mod, $msg, $sub));
+	unless (defined $rv) {
+		carp "Failed to add msg $msg to DB: $DBI::errstr";
 		return $pkg;
 	}
 	return $pkg;
@@ -234,6 +300,25 @@ sub execute {
 	my ($msg, $heap, $channel, $nick, $host, $type) = @_;
 	my $c = new Anna::Config;
 	my ($trigger, $botnick) = ($c->get('trigger'), $c->get('nick'));
+	if ($type eq 'msg') {
+		debug_print "Recieved a PRIVMSG from [$nick]";
+		# MSG
+		# if the message matched something hooked with bindmsg, return. 
+		# Otherwise, assume it was a standard command
+		# XXX: REWRITE THIS SHIT! What about bound regexps? other stuff?
+		# I need something more general.
+		if (do_msg($msg, $heap, $channel, $nick, $host, $type)) {
+			return 1;
+		} else {
+			if ($msg =~ /^(\Q$trigger\E|\Q$botnick\E[ :,-]+)/) {
+				$msg =~ s/^(\Q$trigger\E|\Q$botnick\E[ :,-]+\s*)//;
+			}
+			do_cmd($msg, $heap, $channel, $nick, $host, $type);
+			return 1;
+		}
+		
+	}
+
 	# Command
 	if ($msg =~ /^(\Q$trigger\E|\Q$botnick\E[ :,-]+)/) {
 		my $cmd = $msg;
@@ -314,6 +399,47 @@ sub do_cmd {
 		return 1;
 	}
 	
+	my $s = \&{ "Anna::Module::".$name."::".$sub };
+	eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $modules{$name}, $m)';
+	confess $@ if $@;
+
+	return 1;
+}
+
+# sub: do_msg
+# Handles privmsg-checking and execution, if a msg-trigger is found.
+#
+# Params:
+# 	msg - the full message, that were recieved
+# 	heap - ref to POE heap
+# 	channel - the target the message is to be returned to (in case of channels a 
+# 	channel-name, in case of privmsgs the user who sent the message)
+# 	nick - the nickname of the sender of the message
+# 	host - senders hostname
+# 	type - type of message. 'public' for messages to channels, 'msg' for private messages
+#
+# Returns: 	
+# 	1
+sub do_msg {
+	my ($cmd, $heap, $channel, $nick, $host, $type) = @_;
+	my $dbh = new Anna::DB;
+	unless ($dbh) {
+		carp "Failed to obtain DB handle: $DBI::errstr";
+		return 1;
+	}
+	my ($c, $m) = split(' ', $cmd, 2);
+	my $sth = $dbh->prepare(qq{
+		SELECT * FROM modules WHERE type = 'msg' AND value = ?
+	});
+	$sth->execute($c);
+	my ($name, $sub);
+	if (my $row = $sth->fetchrow_hashref) {
+		$name = $row->{'name'};
+		$sub = $row->{'sub'};
+	} else {
+		return 0;
+	}
+	debug_print(sprintf("Calling %s", $sub));	
 	my $s = \&{ "Anna::Module::".$name."::".$sub };
 	eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $modules{$name}, $m)';
 	confess $@ if $@;
