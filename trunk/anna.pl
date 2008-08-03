@@ -350,9 +350,7 @@ sub parse_message {
 		# Private message (p2p)
 		# This is meant for things that anna should _only_
 		# respond to in private (ie. authentications).
-		if ($msg =~ /^(\Q$trigger\E|)register\s+(.*?)\s+(.*)$/) {
-			$out = bot_register($heap, $2, $3, $from);
-		} elsif ($msg =~ /^(\Q$trigger\E|)op$/i) {
+		if ($msg =~ /^(\Q$trigger\E|)op$/i) {
 			$out = bot_op($heap, $from);
 		} elsif ($msg =~ /^(\Q$trigger\E|)addop\s+(.*)$/) {
 			$out = bot_addop($heap, $2, $from);
@@ -892,29 +890,6 @@ sub bot_reload {
 	return 'FALSE';
 }
 
-## bot_register
-# Register a new user. Takes two vars - username and password
-sub bot_register {
-	my ($heap, $user, $pass, $from) = @_;
-	return "Error - you must supply a username and a password" 
-		unless (defined $user && defined $pass);
-	return "Error - missing heap or hostmask in register arguments. This is likely a bug"
-		unless (defined $heap && defined $from);
-	
-	my $dbh = new Anna::DB;
-	my $query = "SELECT id FROM users WHERE username = ?";
-	my $sth = $dbh->prepare($query);
-	$sth->execute($user);
-	return "Error - username already exists" if ($sth->fetchrow());
-	
-	$query = "INSERT INTO users (username, password) VALUES (?, ?)";
-	$sth = $dbh->prepare($query);
-	my @salt_chars = ('a'..'z','A'..'Z','0'..'9');
-	my $salt = $salt_chars[rand(63)] . $salt_chars[rand(63)];
-	$sth->execute($user, crypt($pass, $salt));
-	bot_auth($heap, $user, $pass, $from);
-	return "You were succesfully registered and are already logged in. Welcome aboard";
-}
 
 ## bot_rmop
 # Removes a user from list of opers. Takes three params - username to remove, 

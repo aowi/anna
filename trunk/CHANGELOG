@@ -6,6 +6,8 @@ Current
 	- Use Module::Build instead of my dodgy makefile
 	- dbfile option removed. Your DB is locked in ~/.anna/anna.db. Muhahaha!
 	- Module loading refactored
+	- Add bindmsg sub to ::Module
+	- Add Anna::Auth and modules/core/auth.pl
 
 0.50 Thu Jul 31 23:06:30 CEST 2008
     - NOT RELEASED
