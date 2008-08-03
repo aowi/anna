@@ -9,6 +9,12 @@ TODO for module-refactoring:
   * Add support for specifying flags
 
 * Implement support for binding to specific events
+ * We will need our own event dispatcher, as POE's can't bind more than one
+   sub to any given event. The simplest solution appears to be a new Anna::Event
+   module that listens for ALL events and allows you to register an event-handler 
+   with an event. Anna::Module::bindevent can then make use of this, and all the 
+   standard event handlers can do so too. Any unbound event is just forwarded to
+   Anna::Debug::_default
 
 * Implement onunload, onwhatelse?
 
