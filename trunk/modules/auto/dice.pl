@@ -4,7 +4,7 @@ use warnings;
 use Anna::Module;
 
 my $mod = Anna::Module->new('dice');
-$mod->bindregexp('^\d+d\d+$', 'dice')->bindcmd('dice', 'dice');
+$mod->bindregexp('\d+d\d+', 'dice')->bindcmd('dice', 'dice');
 
 sub dice {
 	my ($irc, $msg, $nick, $target) = @_[IRC, ARG, NICK, CHAN];

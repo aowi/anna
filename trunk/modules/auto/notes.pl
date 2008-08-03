@@ -14,7 +14,7 @@ sub mynotes {
 	my ($irc, $channel, $nick, $type) = @_[IRC, CHAN, NICK, TYPE];
 	
 	my $query = "SELECT word FROM notes WHERE author = ? ORDER BY word ASC";
-	my $sth = Anna::DB->new->prepare($query);
+	my $sth = Anna::DB->new('notes')->prepare($query);
 	$sth->execute($nick);
 	my (@row, @words);
 	my $i = 0;
@@ -53,7 +53,7 @@ sub note {
 	my ($note, $irc, $target, $nick) = @_[ARG, IRC, CHAN, NICK];
 	
 	my ($dbh, $query, $sth, @row);
-	$dbh = new Anna::DB;
+	$dbh = new Anna::DB 'notes';
 	# Print random note if nothing is specified
 	unless ($note) {
 		$query = "SELECT * FROM notes";
@@ -123,4 +123,8 @@ sub note {
 	} else {
 		$irc->yield(privmsg => $target => "'".$note."' was not found, sorry");
 	}
+}
+
+sub init {
+	Anna::DB->new('notes')->do(q|CREATE TABLE IF NOT EXISTS notes (id, word, answer, author, date)|);
 }

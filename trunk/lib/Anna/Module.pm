@@ -354,7 +354,11 @@ sub execute {
 # 	nothing
 sub loaddir {
 	my $dir = shift;
-	opendir(DIR, $dir) or croak $!;
+	unless (-d $dir) {
+		debug_print(sprintf("%s does not exist or is not a directory - skipped!", $dir));
+		return;
+	}
+	opendir(DIR, $dir) or confess $!;
 	while (defined(my $file = readdir(DIR))) {
 		if ($file =~ m/[.]pl$/) {
 			my $m = $file;
