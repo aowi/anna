@@ -50,7 +50,7 @@ instead? Might make module-loading a whole lot easier.
 
 Git-stuff
 ========
-git-clone git://frokostgruppen.dk/var/git/anna.git
+git-clone git://frokostgruppen.dk/var/cache/git/anna.git
 git-commit, git-push and so on
 
 Multiple networks
