@@ -1,0 +1,26 @@
+Read this before you start picking at the internals of Anna^
+
+Coding style
+------------
+* No tabs, use four spaces instead
+  If you use vim, consider setting a modeline at the top of the file:
+  # vim: set expandtab:tabstop=4:shiftwidth=4
+
+* No newline before opening braces of methods/functions
+  Ie. use "sub foo {" rather than 
+  sub foo
+  {
+  The same goes for opening braces of hashes, arrays and anything else.
+
+* Please remove trailing whitespace
+* Keep comments on a separate line
+
+Documentation
+-------------
+* All internal modules (ie. stuff in the lib/ dir) must be documented
+  in POD. It doesn't matter whether it is inlined with the source, or
+  at the very end of the module.
+
+* Bot modules need not have POD documentation, but it is generally 
+  advisable to include it. If you do so, keep in mind that it is meant
+  for developers - not end users.
