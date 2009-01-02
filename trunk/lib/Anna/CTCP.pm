@@ -1,3 +1,4 @@
+# vim: set expandtab:tabstop=4:shiftwidth=4
 package Anna::CTCP;
 use strict;
 use warnings;
@@ -26,19 +27,19 @@ use POE;
 # Returns:
 #   1
 sub on_ctcp_ping {
-	my ($from, $to, $msg, $h) = @_[ARG0, ARG1, ARG2, HEAP];
-	my ($nick, $host) = split(/!/, $from);
+    my ($from, $to, $msg, $h) = @_[ARG0, ARG1, ARG2, HEAP];
+    my ($nick, $host) = split(/!/, $from);
 
-	$h->{seen_traffic} = 1;
+    $h->{seen_traffic} = 1;
 
-	# Protocol says to use PONG in ctcpreply, but irssi & xchat for some 
-	# reason only reacts to PING... mrmblgrbml
-	$msg = "PING ".$msg;
-	$h->{irc}->yield(ctcpreply => $nick => $msg);
+    # Protocol says to use PONG in ctcpreply, but irssi & xchat for some 
+    # reason only reacts to PING... mrmblgrbml
+    $msg = "PING ".$msg;
+    $h->{irc}->yield(ctcpreply => $nick => $msg);
 
-	irclog('status' => sprintf "-!- CTCP PING request from %s recieved", $nick);
-	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." CTCP PING request from %s recieved\n",
-		print_time(), $nick if Anna::Config->new->get('verbose');
+    irclog('status' => sprintf "-!- CTCP PING request from %s recieved", $nick);
+    printf "[%s] ".colour("-", "94")."!".colour("-", "94")." CTCP PING request from %s recieved\n",
+        print_time(), $nick if Anna::Config->new->get('verbose');
 }
 
 # sub: on_ctcpreply_ping
@@ -55,22 +56,22 @@ sub on_ctcp_ping {
 # Returns:
 #   1
 sub on_ctcpreply_ping {
-	my ($from, $to, $msg, $h) = @_[ARG0, ARG1, ARG2, HEAP];
-	my ($nick, $host) = split(/!/, $from);
+    my ($from, $to, $msg, $h) = @_[ARG0, ARG1, ARG2, HEAP];
+    my ($nick, $host) = split(/!/, $from);
 
-	$h->{seen_traffic} = 1;
-	
-	unless ($msg) {
-		irclog('status' => sprintf "-!- Recieved invalid CTCP PING REPLY from %s", $nick);
-		printf "[%s] ".colour("-", "94")."!".colour("-", "94")." Recieved invalid CTCP PING REPLY from %s\n",
-			print_time(), $nick unless Anna::Config->new->get('silent');
-		return 1;
-	}
+    $h->{seen_traffic} = 1;
+    
+    unless ($msg) {
+        irclog('status' => sprintf "-!- Recieved invalid CTCP PING REPLY from %s", $nick);
+        printf "[%s] ".colour("-", "94")."!".colour("-", "94")." Recieved invalid CTCP PING REPLY from %s\n",
+            print_time(), $nick unless Anna::Config->new->get('silent');
+        return 1;
+    }
 
-	my $diff = time - $msg;
-	irclog('status' => sprintf "-!- CTCP PING REPLY from %s: %s sec", $nick, $diff);
-	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." CTCP PING REPLY from %s: %s sec\n",
-		print_time(), $nick, $diff unless Anna::Config->new->get('silent');
+    my $diff = time - $msg;
+    irclog('status' => sprintf "-!- CTCP PING REPLY from %s: %s sec", $nick, $diff);
+    printf "[%s] ".colour("-", "94")."!".colour("-", "94")." CTCP PING REPLY from %s: %s sec\n",
+        print_time(), $nick, $diff unless Anna::Config->new->get('silent');
 }
 
 # sub: on_ctcp_version
@@ -88,15 +89,15 @@ sub on_ctcpreply_ping {
 # Returns:
 #   1
 sub on_ctcp_version {
-	my ($from, $to, $msg, $h) = @_[ARG0, ARG1, ARG2, HEAP];
-	my ($nick, $host) = split(/!/, $from);
-	
-	$h->{seen_traffic} = 1;
-	
-	$h->{irc}->yield(ctcpreply => $nick => Anna::Utils::SCRIPT_NAME." : ".Anna::Utils::SCRIPT_VERSION." : ".Anna::Utils::SCRIPT_SYSTEM);
-	irclog('status' => sprintf "-!- CTCP VERSION request from %s recieved", $nick);
-	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." CTCP VERSION request from %s recieved\n",
-		print_time(), $nick if Anna::Config->new->get('verbose');
+    my ($from, $to, $msg, $h) = @_[ARG0, ARG1, ARG2, HEAP];
+    my ($nick, $host) = split(/!/, $from);
+    
+    $h->{seen_traffic} = 1;
+    
+    $h->{irc}->yield(ctcpreply => $nick => Anna::Utils::SCRIPT_NAME." : ".Anna::Utils::SCRIPT_VERSION." : ".Anna::Utils::SCRIPT_SYSTEM);
+    irclog('status' => sprintf "-!- CTCP VERSION request from %s recieved", $nick);
+    printf "[%s] ".colour("-", "94")."!".colour("-", "94")." CTCP VERSION request from %s recieved\n",
+        print_time(), $nick if Anna::Config->new->get('verbose');
 }
 
 # sub: on_ctcpreply_version
@@ -112,22 +113,22 @@ sub on_ctcp_version {
 # Returns:
 #   1
 sub on_ctcpreply_version {
-	my ($from, $to, $msg, $h) = @_[ARG0, ARG1, ARG2, HEAP];
-	my ($nick) = split(/!/, $from);
+    my ($from, $to, $msg, $h) = @_[ARG0, ARG1, ARG2, HEAP];
+    my ($nick) = split(/!/, $from);
 
-	$h->{seen_traffic} = 1;
-	
-	unless ($msg) {
-		irclog('status' => sprintf "-!- Recieved invalid CTCP VERSION REPLY from %s", $nick);
-		printf "[%s] %s!%s Recieved invalid CTCP VERSION REPLY from %s\n", 
-			print_time(), colour('-', '94'), colour('-', '94'), 
-			$nick unless Anna::Config->new->get('silent');
-		return 1;
-	}
+    $h->{seen_traffic} = 1;
+    
+    unless ($msg) {
+        irclog('status' => sprintf "-!- Recieved invalid CTCP VERSION REPLY from %s", $nick);
+        printf "[%s] %s!%s Recieved invalid CTCP VERSION REPLY from %s\n", 
+            print_time(), colour('-', '94'), colour('-', '94'), 
+            $nick unless Anna::Config->new->get('silent');
+        return 1;
+    }
 
-	irclog('status' => sprintf "-!- CTCP VERSION REPLY from %s: %s", $nick, $msg);
-	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." CTCP VERSION REPLY from %s: %s\n",
-		print_time(), $nick, $msg unless Anna::Config->new->get('silent');
+    irclog('status' => sprintf "-!- CTCP VERSION REPLY from %s: %s", $nick, $msg);
+    printf "[%s] ".colour("-", "94")."!".colour("-", "94")." CTCP VERSION REPLY from %s: %s\n",
+        print_time(), $nick, $msg unless Anna::Config->new->get('silent');
 }
 
 # sub: on_ctcp_time
@@ -144,16 +145,16 @@ sub on_ctcpreply_version {
 # Returns:
 #   1
 sub on_ctcp_time {
-	my ($from, $h) = @_[ARG0, HEAP];
-	my ($nick) = split(/!/, $from);
+    my ($from, $h) = @_[ARG0, HEAP];
+    my ($nick) = split(/!/, $from);
 
-	$h->{seen_traffic} = 1;
-	
-	$h->{irc}->yield(ctcpreply => $nick => "TIME ".scalar localtime time);
+    $h->{seen_traffic} = 1;
+    
+    $h->{irc}->yield(ctcpreply => $nick => "TIME ".scalar localtime time);
 
-	irclog('status' => sprintf "-!- CTCP TIME recieved from %s", $nick);
-	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." CTCP TIME recieved from %s\n",
-		print_time(), $nick if Anna::Config->new->get('verbose');
+    irclog('status' => sprintf "-!- CTCP TIME recieved from %s", $nick);
+    printf "[%s] ".colour("-", "94")."!".colour("-", "94")." CTCP TIME recieved from %s\n",
+        print_time(), $nick if Anna::Config->new->get('verbose');
 }
 
 # sub: on_ctcp_finger
@@ -170,21 +171,21 @@ sub on_ctcp_time {
 # Returns:
 #   1
 sub on_ctcp_finger {
-	my ($from, $h) = @_[ARG0, HEAP];
-	my ($nick) = split(/!/, $from);
+    my ($from, $h) = @_[ARG0, HEAP];
+    my ($nick) = split(/!/, $from);
 
-	$h->{seen_traffic} = 1;
-	
-	my @replies = ("Dont finger me there...",
-			"Don't your fscking dare!",
-			"Screw off!",
-			"Yes, please",
-			"Please don't kill me... she did");
-	$h->{irc}->yield(ctcpreply => $nick => "FINGER ".$replies[rand scalar @replies]);
+    $h->{seen_traffic} = 1;
+    
+    my @replies = ("Dont finger me there...",
+            "Don't your fscking dare!",
+            "Screw off!",
+            "Yes, please",
+            "Please don't kill me... she did");
+    $h->{irc}->yield(ctcpreply => $nick => "FINGER ".$replies[rand scalar @replies]);
 
-	irclog('status' => sprintf "-!- CTCP FINGER recieved from %s", $nick);
-	printf "[%s] ".colour("-", "94")."!".colour("-", "94")." CTCP FINGER recieved from %s\n",
-		print_time(), $nick if Anna::Config->new->get('verbose');
+    irclog('status' => sprintf "-!- CTCP FINGER recieved from %s", $nick);
+    printf "[%s] ".colour("-", "94")."!".colour("-", "94")." CTCP FINGER recieved from %s\n",
+        print_time(), $nick if Anna::Config->new->get('verbose');
 }
 
 1;

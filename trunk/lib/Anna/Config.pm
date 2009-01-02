@@ -1,3 +1,4 @@
+# vim: set expandtab:tabstop=4:shiftwidth=4
 package Anna::Config;
 use strict;
 use warnings;
@@ -12,17 +13,17 @@ use Anna::Utils;
 use Anna::DB;
 
 my %config = (
-	server		=> "irc.blitzed.org",
-	nick		=> "Anna^",
-	username	=> "anna",
-	port		=> 6667,
-	channel		=> "#frokostgruppen",
-	name		=> "Boten Anna",
-	colour		=> 1,
-	trigger		=> "!",
-	debug		=> 0,
-	verbose		=> 0,
-	log			=> 0
+    server      => "irc.blitzed.org",
+    nick        => "Anna^",
+    username    => "anna",
+    port        => 6667,
+    channel     => "#frokostgruppen",
+    name        => "Boten Anna",
+    colour      => 1,
+    trigger     => "!",
+    debug       => 0,
+    verbose     => 0,
+    log         => 0
 );
 
 # Func: new
@@ -34,10 +35,10 @@ my %config = (
 # Returns:
 #   A blessed reference to a hash (that is, a config-object)
 sub new {
-	my $class = shift;
-	croak "$class->new doesn't take any parameters" if @_;
-	my $i = 1;
-	return bless \$i, $class;
+    my $class = shift;
+    croak "$class->new doesn't take any parameters" if @_;
+    my $i = 1;
+    return bless \$i, $class;
 }
 
 # Func: exists
@@ -51,7 +52,7 @@ sub new {
 # Returns:
 #   1 if the key exists, 0 if it doesn't
 sub exists {
-	return exists $config{$_[1]};
+    return exists $config{$_[1]};
 }
 
 # sub: parse_configfile
@@ -65,53 +66,53 @@ sub exists {
 # Returns: 
 #   the updated config-object  
 sub parse_configfile {
-	my ($self, $cfile) = @_;
-	unless (defined $cfile) {
-		carp "Missing parameter in parse_configfile" 
-			unless defined $cfile;
-		return $self;
-	}
-	unless (-r $cfile) {
-		carp "$cfile does not exist or is not readable";
-		return $self;
-	}
-	open(CFG, "<".$cfile) or 
-		croak("Can't open configuration file ".$cfile.": ".$!);
-	while(<CFG>) {
-		next if (/^#/ || /^\[/ || /^$/);
-		if (/^(.*?)\s*=\s*(.*)$/) {
-			# Server part
-			$self->set('server', $2) if (lc($1) eq 'server');
-			$self->set('port', $2) if (lc($1) eq 'port');
-			$self->set('nick', $2) if (lc($1) eq 'nickname');
-			$self->set('username', $2) if (lc($1) eq 'username');
-			$self->set('channel', $2) if (lc($1) eq 'channel');
-			$self->set('name', $2) if (lc($1) eq 'ircname');
-			$self->set('nspasswd', $2) if (lc($1) eq 'nspasswd');
-			# Script part
-			$self->set('colour', $2) if (lc($1) eq 'colour');
-			$self->set('silent', $2) if (lc($1) eq 'silent');
-			$self->set('verbose', $2) if (lc($1) eq 'verbose');
-			$self->set('log', $2) if (lc($1) eq 'logging');
-			# Bot part
-			$self->set('trigger', $2) if (lc($1) eq 'trigger');
-			if (lc($1) eq 'bannedwords') {
-				$config{'bannedwords'} = [] 
-					unless exists $config{'bannedwords'};
-				foreach (split ' ', $2) {
-					push @{$config{'bannedwords'}}, $_;
-				}
-			}
-			$self->set('voiceauth', $2) if (lc($1) eq 'voiceauth');
+    my ($self, $cfile) = @_;
+    unless (defined $cfile) {
+        carp "Missing parameter in parse_configfile" 
+            unless defined $cfile;
+        return $self;
+    }
+    unless (-r $cfile) {
+        carp "$cfile does not exist or is not readable";
+        return $self;
+    }
+    open(CFG, "<".$cfile) or 
+        croak("Can't open configuration file ".$cfile.": ".$!);
+    while(<CFG>) {
+        next if (/^#/ || /^\[/ || /^$/);
+        if (/^(.*?)\s*=\s*(.*)$/) {
+            # Server part
+            $self->set('server', $2) if (lc($1) eq 'server');
+            $self->set('port', $2) if (lc($1) eq 'port');
+            $self->set('nick', $2) if (lc($1) eq 'nickname');
+            $self->set('username', $2) if (lc($1) eq 'username');
+            $self->set('channel', $2) if (lc($1) eq 'channel');
+            $self->set('name', $2) if (lc($1) eq 'ircname');
+            $self->set('nspasswd', $2) if (lc($1) eq 'nspasswd');
+            # Script part
+            $self->set('colour', $2) if (lc($1) eq 'colour');
+            $self->set('silent', $2) if (lc($1) eq 'silent');
+            $self->set('verbose', $2) if (lc($1) eq 'verbose');
+            $self->set('log', $2) if (lc($1) eq 'logging');
+            # Bot part
+            $self->set('trigger', $2) if (lc($1) eq 'trigger');
+            if (lc($1) eq 'bannedwords') {
+                $config{'bannedwords'} = [] 
+                    unless exists $config{'bannedwords'};
+                foreach (split ' ', $2) {
+                    push @{$config{'bannedwords'}}, $_;
+                }
+            }
+            $self->set('voiceauth', $2) if (lc($1) eq 'voiceauth');
 #                       $require_ops = $2 if (lc($1) eq 'require op');
 #                       $require_voice = $2 if (lc($1) eq 'require voice');
-		} else {
-			carp "Syntax error in configuration file (".$cfile.") line ".$. 
-				unless ($self->get('silent'));
-		}
-	}
-	close(CFG);
-	return $self;
+        } else {
+            carp "Syntax error in configuration file (".$cfile.") line ".$. 
+                unless ($self->get('silent'));
+        }
+    }
+    close(CFG);
+    return $self;
 }
 
 # sub: set
@@ -126,15 +127,15 @@ sub parse_configfile {
 # Returns:
 #   undef on failure, 1 on success
 sub set {
-	my $self = shift;
-	my ($k, $v) = @_;
-	unless (defined $k && defined $v) {
-		carp "set require two parameters";
-		return undef;
-	}
+    my $self = shift;
+    my ($k, $v) = @_;
+    unless (defined $k && defined $v) {
+        carp "set require two parameters";
+        return undef;
+    }
 
-	$config{$k} = $v;
-	return 1;
+    $config{$k} = $v;
+    return 1;
 }
 
 # sub: get
@@ -148,15 +149,15 @@ sub set {
 # Returns:
 #   undef on failure, the value on success
 sub get {
-	my ($self, $k) = @_;
+    my ($self, $k) = @_;
 
-	unless (defined $k) {
-		carp "get requires one parameter";
-		return undef;
-	}
-	
-	return $config{$k} if defined $config{$k};
-	undef;
+    unless (defined $k) {
+        carp "get requires one parameter";
+        return undef;
+    }
+    
+    return $config{$k} if defined $config{$k};
+    undef;
 }
 
 # sub: toggle
@@ -170,21 +171,21 @@ sub get {
 # Returns:
 #   1 on success, 0 on failure
 sub toggle {
-	my ($self, $k) = @_;
-	
-	unless (defined $k) {
-		carp "toggle requires one parameter";
-		return 0;
-	}
+    my ($self, $k) = @_;
+    
+    unless (defined $k) {
+        carp "toggle requires one parameter";
+        return 0;
+    }
 
-	if (defined $self->get($k) && $self->get($k) != 1 && $self->get($k) != 0) {
-		carp "tried to toggle non-boolean key $k (value: ".$self->get($k).")";
-		return 0;
-	}
+    if (defined $self->get($k) && $self->get($k) != 1 && $self->get($k) != 0) {
+        carp "tried to toggle non-boolean key $k (value: ".$self->get($k).")";
+        return 0;
+    }
 
-	$self->get($k) ? $self->set($k, 0) : $self->set($k, 1);
+    $self->get($k) ? $self->set($k, 0) : $self->set($k, 1);
 
-	return 1;
+    return 1;
 }
 
 # sub: delete
@@ -200,21 +201,21 @@ sub toggle {
 # Returns:
 #   0 on failure, the old (now deleted) value of the key on success
 sub delete {
-	my ($self, $k) = @_;
-	
-	unless (defined $k) {
-		carp "delete requires one parameter";
-		return 0;
-	}
-	
-	unless (defined $self->get($k)) {
-		# Key didn't exist
-		carp "Attempted to delete nonexisting key $k";
-		return 0;
-	}
-	my $v = $config{$k};
-	delete $config{$k};
-	return $v;
+    my ($self, $k) = @_;
+    
+    unless (defined $k) {
+        carp "delete requires one parameter";
+        return 0;
+    }
+    
+    unless (defined $self->get($k)) {
+        # Key didn't exist
+        carp "Attempted to delete nonexisting key $k";
+        return 0;
+    }
+    my $v = $config{$k};
+    delete $config{$k};
+    return $v;
 }
 
 1;

@@ -1,3 +1,4 @@
+# vim: set expandtab:tabstop=4:shiftwidth=4
 package Anna::Connection;
 
 use strict;
@@ -32,12 +33,12 @@ my $std_croak = "Do not call do_*-routines manually. These are for internal use 
 # Returns:
 #   1
 sub do_autoping() {
-	my ($kernel, $heap) = @_[KERNEL, HEAP];
-	croak $std_croak unless (defined $kernel && defined $heap);
-	$heap->{irc}->yield(userhost => $heap->{irc}->nick_name) unless $heap->{seen_traffic};
-	$heap->{seen_traffic} = 0;
-	$kernel->delay(autoping => 300);
-	return 1;
+    my ($kernel, $heap) = @_[KERNEL, HEAP];
+    croak $std_croak unless (defined $kernel && defined $heap);
+    $heap->{irc}->yield(userhost => $heap->{irc}->nick_name) unless $heap->{seen_traffic};
+    $heap->{seen_traffic} = 0;
+    $kernel->delay(autoping => 300);
+    return 1;
 }
 
 # sub: do_connect
@@ -52,12 +53,12 @@ sub do_autoping() {
 # Returns:
 #   1
 sub do_connect() {
-	croak $std_croak unless defined $_[HEAP];
-	my $c = new Anna::Config;
-#	irclog('status', sprintf "-!- Connecting to %s", $c->get('server'));
-	verbose_print(sprintf("Connecting to %s", $c->get('server')));
-	$_[HEAP]->{irc}->yield(connect => {});
-	return 1;
+    croak $std_croak unless defined $_[HEAP];
+    my $c = new Anna::Config;
+#   irclog('status', sprintf "-!- Connecting to %s", $c->get('server'));
+    verbose_print(sprintf("Connecting to %s", $c->get('server')));
+    $_[HEAP]->{irc}->yield(connect => {});
+    return 1;
 }
 
 # sub: do_reconnect
@@ -73,16 +74,16 @@ sub do_connect() {
 # Returns:
 #   1
 sub do_reconnect() {
-	croak $std_croak unless defined $_[KERNEL];
-	my $kernel = $_[KERNEL];
-	# Disable autopings when disconnected
-	$kernel->delay(autoping => undef);
-#	irclog('status', 'Attempting reconnect in 60 seconds...');
-	# TODO: make timeout configurable
-	printf "[%s] Attempting reconnect in 60 seconds...\n", print_time() 
-		unless Anna::Config->new->get('silent');
-	$kernel->delay(connect => 60);
-	return 1;
+    croak $std_croak unless defined $_[KERNEL];
+    my $kernel = $_[KERNEL];
+    # Disable autopings when disconnected
+    $kernel->delay(autoping => undef);
+#   irclog('status', 'Attempting reconnect in 60 seconds...');
+    # TODO: make timeout configurable
+    printf "[%s] Attempting reconnect in 60 seconds...\n", print_time() 
+        unless Anna::Config->new->get('silent');
+    $kernel->delay(connect => 60);
+    return 1;
 }
 
 1;

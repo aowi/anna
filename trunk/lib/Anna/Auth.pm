@@ -1,3 +1,4 @@
+# vim: set expandtab:tabstop=4:shiftwidth=4
 package Anna::Auth;
 use strict;
 use warnings;
@@ -5,7 +6,6 @@ use warnings;
 use Anna::DB;
 use Anna::Utils;
 use POE; 
-use Data::Dumper;
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ Returns a new Anna::Auth object. Doesn't take any arguments.
 
 =cut
 sub new {
-	return bless {}, shift;
+    return bless {}, shift;
 }
 
 =pod
@@ -84,26 +84,26 @@ to identify with)
 
 Returns 1 upon succesful identification (ie. the user is now "logged in").
 
-Returns 0 in case of error.
+Returns 0 in case of error and sets an appropriate error message.
 
 =cut
 sub identify {
-	my ($self, $user, $pass, $nick, $host) = @_;
+    my ($self, $user, $pass, $nick, $host) = @_;
 
-	my $query = "SELECT * FROM users WHERE username = ?";
-	my $sth = Anna::DB->new->prepare($query);
-	$sth->execute($user);
-	if (my @row = $sth->fetchrow()) {
-		if (crypt($pass, substr($row[2], 0, 2)) eq $row[2]) {
-			# We have a match! Light it
-			$auth{$host} = { user => $user, nick => $nick };
-			debug_print(sprintf("Nick %s [%s] successfully identified as %s", $nick, $host, $user));
-			Dumper(%auth);
-			return 1;
-		}
-	}
-	debug_print(sprintf("Nick %s [%s] failed identificatation as %s", $nick, $host, $user));
-	return 0;
+    my $query = "SELECT * FROM users WHERE username = ?";
+    my $sth = Anna::DB->new->prepare($query);
+    $sth->execute($user);
+    if (my @row = $sth->fetchrow()) {
+        if (crypt($pass, substr($row[2], 0, 2)) eq $row[2]) {
+            # We have a match! Light it
+            $auth{$host} = { user => $user, nick => $nick };
+            debug_print(sprintf("Nick %s [%s] successfully identified as %s", $nick, $host, $user));
+            return 1;
+        }
+    }
+    $self->{_errstr} = "Error: Invalid username or password";
+    debug_print(sprintf("Nick %s [%s] failed identificatation as %s", $nick, $host, $user));
+    return 0;
 }
 
 =pod
@@ -127,28 +127,28 @@ error message that can be accessed with the errstr() method.
 
 =cut
 sub register {
-	my ($self, $user, $pass) = @_;
-	
-	unless (defined $user && defined $pass) {
-		$self->{_errmsg} = "Error - you must supply a username and a password";
-		return 0;
-	}
-	
-	my $dbh = new Anna::DB;
-	my $query = "SELECT id FROM users WHERE username = ?";
-	my $sth = $dbh->prepare($query);
-	$sth->execute($user);
-	if ($sth->fetchrow) {
-		$self->{_errmsg} = "Error - username already exists";
-		return 0;
-	}
-	
-	$query = "INSERT INTO users (username, password) VALUES (?, ?)";
-	$sth = $dbh->prepare($query);
-	my @salt_chars = ('a'..'z','A'..'Z','0'..'9');
-	my $salt = $salt_chars[rand(63)] . $salt_chars[rand(63)];
-	$sth->execute($user, crypt($pass, $salt));
-	return 1;
+    my ($self, $user, $pass) = @_;
+    
+    unless (defined $user && defined $pass) {
+        $self->{_errmsg} = "Error: you must supply a username and a password";
+        return 0;
+    }
+    
+    my $dbh = new Anna::DB;
+    my $query = "SELECT id FROM users WHERE username = ?";
+    my $sth = $dbh->prepare($query);
+    $sth->execute($user);
+    if ($sth->fetchrow) {
+        $self->{_errmsg} = "Error: username already exists";
+        return 0;
+    }
+    
+    $query = "INSERT INTO users (username, password) VALUES (?, ?)";
+    $sth = $dbh->prepare($query);
+    my @salt_chars = ('a'..'z','A'..'Z','0'..'9');
+    my $salt = $salt_chars[rand(63)] . $salt_chars[rand(63)];
+    $sth->execute($user, crypt($pass, $salt));
+    return 1;
 }
 
 =pod
@@ -160,8 +160,9 @@ no errors have occured yet.
 
 =cut
 sub errstr {
-	my $self = shift;
-	return $self->{_errmsg};
+    my $self = shift;
+    defined ($self->{_errmsg}) ?
+        return $self->{_errmsg} : return undef;
 }
 
 =pod
@@ -196,13 +197,13 @@ message (see errstr())
 
 =cut
 sub host2user {
-	my ($self, $host) = @_;
-	if (exists $auth{$host}) {
-		return $auth{$host};
-	} else {
-		$self->{_errmsg} = sprintf "Error: not identified";
-		return 0;
-	}
+    my ($self, $host) = @_;
+    if (exists $auth{$host}) {
+        return $auth{$host};
+    } else {
+        $self->{_errmsg} = sprintf "Error: not identified";
+        return 0;
+    }
 }
 
 =pod
