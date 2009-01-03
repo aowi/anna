@@ -44,8 +44,6 @@ only one way to obtain it.
 =cut
 my %auth = ();
 
-=pod
-
 =item new()
 
 Returns a new Anna::Auth object. Doesn't take any arguments.
@@ -54,8 +52,6 @@ Returns a new Anna::Auth object. Doesn't take any arguments.
 sub new {
     return bless {}, shift;
 }
-
-=pod
 
 =back
 
@@ -228,7 +224,7 @@ Released under the terms of the GNU General Public License v2
 
 =head1 SEE ALSO
 
-The documentation for the Anna^ IRC Bot, avaiable on 
+The documentation for the Anna^ IRC Bot, available on 
 L<http://frokostgruppen.dk/~arkanoid/anna>
 
 =cut
