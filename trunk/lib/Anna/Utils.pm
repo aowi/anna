@@ -61,7 +61,7 @@ use constant DB_VERSION         => 2;
 # Returns:
 #   1 or exits
 sub version {
-    printf "%s version %s, Copyright (C) 2006-2007 %s\n", 
+    printf "%s version %s, Copyright (C) 2006-2009 %s\n", 
         SCRIPT_NAME, SCRIPT_VERSION, SCRIPT_AUTHOR;
     printf "%s comes with ABSOLUTELY NO WARRANTY; for details, see LICENSE.\n", 
         SCRIPT_NAME;

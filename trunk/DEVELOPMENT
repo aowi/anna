@@ -4,7 +4,7 @@ Coding style
 ------------
 * No tabs, use four spaces instead
   If you use vim, consider setting a modeline at the top of the file:
-  # vim: set expandtab:tabstop=4:shiftwidth=4
+  # vim: et:ts=4:sw=4
 
 * No newline before opening braces of methods/functions
   Ie. use "sub foo {" rather than 

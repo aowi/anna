@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 ## Anna^ IRC Bot
-# Copyright (C) 2006-2008 Anders Ossowicki <and@vmn.dk>
+# Copyright (C) 2006-2009 Anders Ossowicki <and@vmn.dk>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
