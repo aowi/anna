@@ -1,4 +1,4 @@
-# vim: set expandtab:tabstop=4:shiftwidth=4
+# vim: et:ts=4:sw=4
 package Anna::Module;
 use strict;
 use warnings;
@@ -11,13 +11,15 @@ our @ISA = qw(Exporter);
 use Anna::DB;
 use Anna::Config;
 use Anna::Utils;
-use Carp;
+use Carp qw(carp cluck croak confess);
 use Symbol qw(delete_package);
 
 # var: %modules
 # Global, that holds the name of all modules with registered events. Don't
 # mess with this outside Anna::Module!
 our %modules;
+our $module_commands = {};
+our $module_messages = {};
 
 # ugly, dirty and alltogether bad.
 # These subs are exported per default and used as constant expressions by 
@@ -188,19 +190,13 @@ sub bindcmd {
     my $pkg = shift;
     my ($cmd, $sub) = @_;
     my $mod = $pkg->{'name'};
-    if (cmd_exists_in_db($cmd)) {
-        carp "Failed to bind cmd $cmd: Already existing";
-        return $pkg;
+    if (exists $module_commands->{$cmd}) {
+        carp sprintf 
+            "Module %s will overwrite command %s which is already bound by %s",
+            $pkg->{'name'}, $cmd, $module_commands->{$cmd}->[0];
     }
-    my $dbh = new Anna::DB or return $pkg;
-    my $rv = $dbh->do(
-        "INSERT INTO modules (name, type, value, sub) 
-        VALUES (?, 'command', ?, ?)", 
-        undef, ($mod, $cmd, $sub));
-    unless (defined $rv) {
-        carp "Failed to add command $cmd to DB: $DBI::errstr";
-        return $pkg;
-    }
+    $module_commands->{$cmd} = [$pkg->{'name'}, $sub];
+
     return $pkg;
 }
 
@@ -339,7 +335,7 @@ sub execute {
         if ($msg =~ m/$rx/) {
             my $s = \&{ "Anna::Module::".$name."::".$sub};
             eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $modules{$name}, $msg)';
-            confess $@ if $@;
+            cluck $@ if $@;
         }
     }
     return 1;
@@ -385,29 +381,16 @@ sub loaddir {
 # Returns:  
 #   1
 sub do_cmd {
+    debug_print(sprintf "do_cmd called with parameters %s", join(', ',@_));
     my ($cmd, $heap, $channel, $nick, $host, $type) = @_;
-    my $dbh = new Anna::DB;
-    unless ($dbh) {
-        carp "Failed to obtain DB handle: $DBI::errstr";
-        return 1;
-    }
-    my ($c, $m) = split(' ', $cmd, 2);
-    my $sth = $dbh->prepare(qq{
-        SELECT * FROM modules WHERE type = 'command' AND value = ?
-    });
-    $sth->execute($c);
-    my ($name, $sub);
-    if (my $row = $sth->fetchrow_hashref) {
-        $name = $row->{'name'};
-        $sub = $row->{'sub'};
-    } else {
-        return 1;
-    }
-    
-    my $s = \&{ "Anna::Module::".$name."::".$sub };
-    eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $modules{$name}, $m)';
-    confess $@ if $@;
 
+    my ($c, $m) = split(' ', $cmd, 2);
+    if (exists $module_commands->{$c}) {
+        debug_print(sprintf "Command %s resolved to Anna::Module::%s", $c, join('::', @{$module_commands->{$c}}));
+        my $s = \&{ "Anna::Module::".$module_commands->{$c}->[0]."::".$module_commands->{$c}->[1] };
+        eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $modules{$module_commands->{$c}->[0]}, $m)';
+        cluck $@ if $@;
+    }
     return 1;
 }
 
@@ -447,7 +430,7 @@ sub do_msg {
     debug_print(sprintf("Calling %s", $sub));   
     my $s = \&{ "Anna::Module::".$name."::".$sub };
     eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $modules{$name}, $m)';
-    confess $@ if $@;
+    cluck $@ if $@;
 
     return 1;
 }
