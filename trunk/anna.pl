@@ -523,46 +523,6 @@ sub bot_addquote {
     return "Quote inserted. Thanks ".$nick;
 }
 
-
-=begin gtfo
-## bot_dice
-# This returns the result of a die roll (or several)
-# Syntax is '!dice <amount>d<sides>' or just <int>d<int>
-#### TODO: Truncate throws on more than 50 dice instead of removing it
-sub bot_dice {
-    my ($heap, $dieroll, $nick) = @_;
-    
-    if ($dieroll =~ /(\d+)d(\d+)/i) {
-        my $dice = $1;
-        my $sides = $2;
-
-        return 'It seems ' . $nick . ' smoked too much pot. Or has anyone ever seen a die without sides?' if ($sides < 1);
-        return $nick . ' will soon show us something wondrous - the first die with only one side!' if ($sides == 1);
-        return $nick . ' needs to trap down on the sides. Seriously, try fewer sides!' if ($sides >= 1000);
-        $dice = 1 if ($dice < 1);
-        return 'Is ' . $nick . ' going to take a bath in dice? Seriously, try fewer dice!' if ($dice >= 300);
-        
-        # Here we go
-        my ($i, $rnd, $value, $throws);
-        $value = 0;
-        for ($i = 1; $i <= $dice; $i++) {
-            $rnd = int(rand($sides)) + 1;
-            $value = $value + $rnd;
-            
-            if ($i != $dice){
-                $throws .= $rnd . ", ";
-            } else {
-                $throws .= $rnd;
-            }
-        }
-        
-        return $nick . ': ' . $value . ' (' . $throws . ')' if ($dice <= 50);
-        return $nick . ': ' . $value . ' (too many throws to show)';
-    }
-    # It shouldn't be possible to end up here, but anyway
-    return 'Syntax error in diceroll. Correct syntax is <int>d<int>';
-}
-=cut back
 ## bot_fortune
 # Prints a fortune, if fortune is installed
 sub bot_fortune {
