@@ -1,9 +1,3 @@
-Config
-======
-Internally, Anna^ uses a sqlite-table with configuration. Each change is 
-written to the database and, on demand, to the config-file. Each request for a
-config-object, returns whatever is in the table at the moment.
-
 Authentication
 ==============
 Anna^ keeps track of authentications with a sqlite table. Authentications can 
