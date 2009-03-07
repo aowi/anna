@@ -31,8 +31,7 @@ sub CHAN () {  1 } # channel the message is from
 sub NICK () {  2 } # nick of the sender
 sub HOST () {  3 } # host of the sender
 sub TYPE () {  4 } # type of message/event (privmsg, public, join, part, ...)
-sub MOD  () {  5 } # module-object
-sub ARG  () {  6 } # any arguments exactly as they were typed (no processing is done)
+sub ARG  () {  5 } # any arguments exactly as they were typed (no processing is done)
 
 # sub: new
 # Create new instance of Anna::Module. Modules can use this to register for 
@@ -341,7 +340,7 @@ sub do_cmd {
     if (exists $module_commands->{$c}) {
         debug_print(sprintf "Command %s resolved to Anna::Module::%s", $c, join('::', @{$module_commands->{$c}}));
         my $s = \&{ "Anna::Module::".$module_commands->{$c}->[0]."::".$module_commands->{$c}->[1] };
-        eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $modules->{$module_commands->{$c}->[0]}, $m)';
+        eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $m)';
         cluck $@ if $@;
     }
     return 1;
@@ -369,7 +368,7 @@ sub do_msg {
     if (exists $module_messages->{$msg}) {
         debug_print(sprintf "Message %s resolved to Anna::Module::%s", $msg, join('::', @{$module_messages->{$msg}}));
         my $s = \&{ "Anna::Module::".$module_messages->{$msg}->[0]."::".$module_messages->{$msg}->[1]};
-        eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $modules->{$module_messages->{$msg}->[0]}, $args)';
+        eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $args)';
         cluck $@ if $@;
         return 1;
     }
