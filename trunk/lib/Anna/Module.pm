@@ -42,10 +42,10 @@ sub new {
         carp "Module $name already loaded";
         return 0;
     }
-    cluck __PACKAGE__;
+    
+    # XXX: FIXME: TODO: Figure out this has to be called like that
+    my $irc = Anna::Module::IRC::new("Anna::Module::IRC");
     my $db = new Anna::DB $name;
-    $DB::single=2;
-    my $irc = Anna::Module::IRC->new;
     my $module = {
         name    => $name,
         db      => $db,
@@ -321,7 +321,7 @@ sub do_cmd {
             host    => $host,
             type    => $type
         });
-        my $s = \&{ "Anna::Module::".$module_commands->{$c}->[0]."::".$module_commands->{$c}->[1] };
+        my $s = \&{ "Anna::Module::Modules::".$module_commands->{$c}->[0]."::".$module_commands->{$c}->[1] };
         eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $m)';
         cluck $@ if $@;
         $modules->{$module_commands->{$c}->[0]}->{irc}->clearstash;
@@ -357,7 +357,7 @@ sub do_msg {
             host    => $host,
             type    => $type
         });
-        my $s = \&{ "Anna::Module::".$module_messages->{$msg}->[0]."::".$module_messages->{$msg}->[1]};
+        my $s = \&{ "Anna::Module::Modules::".$module_messages->{$msg}->[0]."::".$module_messages->{$msg}->[1]};
         eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $args)';
         cluck $@ if $@;
         $modules->{$module_commands->{$msg}->[0]}->{irc}->clearstash;

@@ -11,22 +11,22 @@ our @ISA = qw(Exporter);
 sub new {
     return bless {}, shift;
 }
-#sub sendmsg {}
-#sub sendaction {}
-#sub reply {}
-#sub reply_hilight {}
-#
-#sub stash {
-#    my $self = shift;
-#    my $params = shift;
-#    while (my ($k, $v) = each %$params) {
-#        $self->{stash}->{$k} = $v;
-#    }
-#}
-#
-#sub clearstash {
-#    my $self = shift;
-#    delete $self->{stash};
-#}
+sub sendmsg {}
+sub sendaction {}
+sub reply {}
+sub reply_hilight {}
+
+sub stash {
+    my $self = shift;
+    my $params = shift;
+    while (my ($k, $v) = each %$params) {
+        $self->{stash}->{$k} = $v;
+    }
+}
+
+sub clearstash {
+    my $self = shift;
+    delete $self->{stash};
+}
 
 1;
