@@ -17,10 +17,10 @@ use Symbol qw(delete_package);
 # var: %modules
 # Global, that holds the name of all modules with registered events. Don't
 # mess with this outside Anna::Module!
-our %modules;
+our $modules         = {};
 our $module_commands = {};
 our $module_messages = {};
-
+our $module_regexps  = {};
 # ugly, dirty and alltogether bad.
 # These subs are exported per default and used as constant expressions by 
 # modules, to avoid having to keep track of argument order, and to allow us to
@@ -59,7 +59,7 @@ sub new {
         db      => $db,
     };
     my $r = bless $module, $class;
-    $modules{$name} = $r;
+    $modules->{$name} = $r;
     return $r;
 }
 
@@ -80,7 +80,7 @@ sub module_loaded {
         # Called as method
         return 1;
     } else {
-        return 1 if (exists $modules{$n});
+        return 1 if (exists $modules->{$n});
     }
     return 0;
 }
@@ -243,15 +243,17 @@ sub execute {
     my $c = new Anna::Config;
     my ($trigger, $botnick) = ($c->get('trigger'), $c->get('nick'));
     if ($type eq 'msg') {
-        debug_print "Recieved a PRIVMSG from [$nick]";
+        debug_print(sprintf "Recieved a private message from [%s]: %s", $nick, $msg);
         # MSG
         # if the message matched something hooked with bindmsg, return. 
         # Otherwise, assume it was a standard command
         # XXX: REWRITE THIS SHIT! What about bound regexps? other stuff?
         # I need something more general.
+        debug_print "Checking whether we want the message";
         if (do_msg($msg, $heap, $channel, $nick, $host, $type)) {
             return 1;
         } else {
+            debug_print "We didn't. Assuming it is a command";
             if ($msg =~ /^(\Q$trigger\E|\Q$botnick\E[ :,-]+)/) {
                 $msg =~ s/^(\Q$trigger\E|\Q$botnick\E[ :,-]+\s*)//;
             }
@@ -261,15 +263,20 @@ sub execute {
         
     }
 
+    debug_print(sprintf "Recieved a public message from [%s]: %s", $nick, $msg);
+    
     # Command
     if ($msg =~ /^(\Q$trigger\E|\Q$botnick\E[ :,-]+)/) {
+        debug_print(sprintf "Message %s resolved as command", $msg);
         my $cmd = $msg;
         $cmd =~ s/^(\Q$trigger\E|\Q$botnick\E[ :,-]+\s*)//;
         do_cmd($cmd, $heap, $channel, $nick, $host, $type);
         return 1;
     }
-
+    debug_print "Not a command...";
+    
     # Regexp
+    debug_print "Checking whether the message matches any bound regexps...";
     my $dbh = new Anna::DB or return 1;
     my $sth = $dbh->prepare(qq{
         SELECT * FROM modules WHERE type = 'regexp'
@@ -279,10 +286,11 @@ sub execute {
         my ($rx, $name, $sub) = ($res->{'value'}, $res->{'name'}, $res->{'sub'});
         if ($msg =~ m/$rx/) {
             my $s = \&{ "Anna::Module::".$name."::".$sub};
-            eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $modules{$name}, $msg)';
+            eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $modules->{$name}, $msg)';
             cluck $@ if $@;
         }
     }
+    debug_print "It didn't... discarding.";
     return 1;
 }
 
@@ -333,7 +341,7 @@ sub do_cmd {
     if (exists $module_commands->{$c}) {
         debug_print(sprintf "Command %s resolved to Anna::Module::%s", $c, join('::', @{$module_commands->{$c}}));
         my $s = \&{ "Anna::Module::".$module_commands->{$c}->[0]."::".$module_commands->{$c}->[1] };
-        eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $modules{$module_commands->{$c}->[0]}, $m)';
+        eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $modules->{$module_commands->{$c}->[0]}, $m)';
         cluck $@ if $@;
     }
     return 1;
@@ -361,11 +369,12 @@ sub do_msg {
     if (exists $module_messages->{$msg}) {
         debug_print(sprintf "Message %s resolved to Anna::Module::%s", $msg, join('::', @{$module_messages->{$msg}}));
         my $s = \&{ "Anna::Module::".$module_messages->{$msg}->[0]."::".$module_messages->{$msg}->[1]};
-        eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $modules{$module_messages->{$msg}->[0]}, $args)';
+        eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $modules->{$module_messages->{$msg}->[0]}, $args)';
         cluck $@ if $@;
+        return 1;
     }
 
-    return 1;
+    return 0;
 }
 
 # sub: load
@@ -451,7 +460,7 @@ sub unload {
     my $m = shift;
     verbose_print(sprintf("Unloading module %s", $m));
     delete_package('Anna::Module::'.$m);
-    delete $modules{$m};
+    delete $modules->{$m};
     my $dbh = new Anna::DB;
     unless ($dbh) {
         carp "Unable to obtain DB handle: $DBI::errstr";
