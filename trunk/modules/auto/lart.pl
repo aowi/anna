@@ -81,3 +81,5 @@ sub init {
 		$sth->execute($lart);
 	}
 }
+
+1;

@@ -427,10 +427,6 @@ sub parse_message {
         $out = bot_reload($heap);
     } elsif ($cmd =~ /^up(time|)$/i) {
         $out = bot_uptime($heap);
-    } elsif ($cmd =~ /^addorder\s+(.*)$/i) {
-        $out = bot_addorder($heap, $1, $nick);
-    } elsif ($cmd =~ /^order\s+(.*)$/i) {
-        $out = bot_order($heap, $nick, $1);
     } elsif ($cmd =~ /^seen\s+(.*)$/i) {
         $out = bot_lastseen($heap, $nick, $1, $type);
     } elsif ($cmd =~ /^meh$/i) {
@@ -486,31 +482,6 @@ sub bot_addop {
         return sprintf "User %s successfully added to list of opers", $user;
     }
     return "Error - couldn't verify your rights - this is probably a bug"
-}
-
-## bot_addorder
-# Insert a new order into the database
-# syntax is !addorder <key> <order>
-sub bot_addorder {
-    my ($heap, $order) = @_;
-    if ($order =~ /^(.*)\s*=\s*(.*\#\#.*)$/) {
-        my $key = trim($1);
-        my $return = trim($2);
-        
-        my $dbh = new Anna::DB;
-        my $query = "SELECT * FROM orders WHERE key = ?";
-        my $sth = $dbh->prepare($query);
-        $sth->execute($key);
-        return sprintf "I already have %s on my menu", $key
-            if ($sth->fetchrow());
-        $query = "INSERT INTO orders (key, baka_order)
-                 VALUES (?,?)";
-        $sth = $dbh->prepare($query);
-        $sth->execute($key, $return);
-        return sprintf "Master, I am here to serve (%s)", $key;
-    } else {
-        return "Wrong syntax for addorder, Use ".Anna::Config->new->get('trigger')."addorder <key> = <order>. <order> must contain '##* which is substituted for the user's nick";
-    }
 }
 
 ## bot_addquote 
@@ -778,38 +749,6 @@ sub bot_op {
         }
     }
     return "I am not allowed to op you!";
-}
-
-## bot_order
-# Your very own bar!
-# This sub should just return FALSE and then instead send an action
-sub bot_order {
-    my ($heap, $nick, $order) = @_;
-    
-    # Discover syntax
-    my ($out, $key);
-    if ($order =~ /(.*) for (.*)/i) {
-        $key = $1;
-        $nick = $2;
-    } else {
-        $key = $order;
-    }
-
-    my $query = "SELECT * FROM orders WHERE key = ?";
-    my $sth = Anna::DB->new->prepare($query);
-    $sth->execute($key);
-    
-    my @row;
-    if (@row = $sth->fetchrow()) {
-        $out = $row[2];
-        $out =~ s/##/$nick/;
-    } else {
-        # Key wasn't in database
-        $out = 'hands ' . $nick . ' ' . $key;
-    }
-
-    $heap->{irc}->yield(ctcp => Anna::Config->new->get('channel') => 'ACTION '.$out);
-    return 'FALSE';
 }
 
 ## bot_quote
