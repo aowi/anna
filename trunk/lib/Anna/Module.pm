@@ -112,67 +112,6 @@ sub empty_db {
     return 1;
 }
 
-# Func: cmd_exists_in_db
-# Checks if a command already exists in the modules-table
-#
-# Parameters:
-#    cmd - command to scan for
-#
-# Returns:
-#    0 if the command doesn't exists, 1 if it's there
-sub cmd_exists_in_db {
-    unless (@_ >= 1) {
-        carp "cmd_exists_in_db takes one parameter";
-        return 0;
-    }
-    my $cmd = shift;
-    if (ref $cmd) {
-        my $pkg = $cmd;
-        $cmd = shift;
-    }
-    my $dbh = new Anna::DB;
-    unless ($dbh) {
-        carp "Couldn't get database-handle: $DBI::errstr";
-        return 0;
-    }
-    my $sth = $dbh->prepare(qq{
-        SELECT value FROM modules WHERE type = 'command' AND value = ?
-    });
-    $sth->execute($cmd);
-    $sth->fetchrow ? return 1 : return 0;
-}
-
-# Func: msg_exists_in_db
-# Checks if a msg already exists in the modules-table
-#
-# Parameters:
-#    msg - msg to scan for
-#
-# Returns:
-#    0 if the command doesn't exists, 1 if it's there
-sub msg_exists_in_db {
-    unless (@_ >= 1) {
-        carp "msg_exists_in_db takes one parameter";
-        return 0;
-    }
-    my $msg = shift;
-    if (ref $msg) {
-        my $pkg = $msg;
-        $msg = shift;
-    }
-    my $dbh = new Anna::DB;
-    unless ($dbh) {
-        carp "Couldn't get database-handle: $DBI::errstr";
-        return 0;
-    }
-    my $sth = $dbh->prepare(qq{
-        SELECT value FROM modules WHERE type = 'msg' AND value = ?
-    });
-    $sth->execute($msg);
-    $sth->fetchrow ? return 1 : return 0;
-}
-
-
 # sub: bindcmd
 # Used as a method to bind a command to a subroutine
 #
@@ -189,13 +128,19 @@ sub bindcmd {
     }
     my $pkg = shift;
     my ($cmd, $sub) = @_;
-    my $mod = $pkg->{'name'};
+
     if (exists $module_commands->{$cmd}) {
-        carp sprintf 
+        warn_print(
+            sprintf 
             "Module %s will overwrite command %s which is already bound by %s",
-            $pkg->{'name'}, $cmd, $module_commands->{$cmd}->[0];
+            $pkg->{'name'}, $cmd, $module_commands->{$cmd}->[0]
+        );
     }
-    $module_commands->{$cmd} = [$pkg->{'name'}, $sub];
+    debug_print(
+        sprintf "Binding command %s to Anna::Module::%s::%s",
+            $cmd, $pkg->{'name'}, $sub
+    );
+    $module_commands->{$cmd} = [ $pkg->{'name'}, $sub ];
 
     return $pkg;
 }
@@ -218,21 +163,21 @@ sub bindmsg {
     }
     my $pkg = shift;
     my ($msg, $sub) = @_;
-    my $mod = $pkg->{'name'};
-    if (msg_exists_in_db($msg)) {
-        carp "Failed to bind msg $msg: Already existing";
-        return $pkg;
+
+    if (exists $module_messages->{$msg}) {
+        warn_print(
+            sprintf
+            "Module %s will overwrite message listener %s which is already bound by %s",
+            $pkg->{'name'}, $msg, $module_messages->{$msg}->[0]
+        );
     }
-    debug_print(sprintf("Binding privmsg %s to %s::%s", $msg, $mod, $sub));
-    my $dbh = new Anna::DB or return $pkg;
-    my $rv = $dbh->do(
-        "INSERT INTO modules (name, type, value, sub) 
-        VALUES (?, 'msg', ?, ?)", 
-        undef, ($mod, $msg, $sub));
-    unless (defined $rv) {
-        carp "Failed to add msg $msg to DB: $DBI::errstr";
-        return $pkg;
-    }
+
+    debug_print(
+        sprintf "Binding privmsg %s to Anna::Module::%s::%s",
+            $msg, $pkg->{'name'}, $sub
+    );
+    $module_messages->{$msg} = [ $pkg->{'name'}, $sub ];
+
     return $pkg;
 }
 
@@ -409,28 +354,16 @@ sub do_cmd {
 # Returns:  
 #   1
 sub do_msg {
-    my ($cmd, $heap, $channel, $nick, $host, $type) = @_;
-    my $dbh = new Anna::DB;
-    unless ($dbh) {
-        carp "Failed to obtain DB handle: $DBI::errstr";
-        return 1;
+    debug_print(sprintf "do_msg called with parameters %s", join(', ',@_));
+    my ($text, $heap, $channel, $nick, $host, $type) = @_;
+    
+    my ($msg, $args) = split(' ', $text, 2);
+    if (exists $module_messages->{$msg}) {
+        debug_print(sprintf "Message %s resolved to Anna::Module::%s", $msg, join('::', @{$module_messages->{$msg}}));
+        my $s = \&{ "Anna::Module::".$module_messages->{$msg}->[0]."::".$module_messages->{$msg}->[1]};
+        eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $modules{$module_messages->{$msg}->[0]}, $args)';
+        cluck $@ if $@;
     }
-    my ($c, $m) = split(' ', $cmd, 2);
-    my $sth = $dbh->prepare(qq{
-        SELECT * FROM modules WHERE type = 'msg' AND value = ?
-    });
-    $sth->execute($c);
-    my ($name, $sub);
-    if (my $row = $sth->fetchrow_hashref) {
-        $name = $row->{'name'};
-        $sub = $row->{'sub'};
-    } else {
-        return 0;
-    }
-    debug_print(sprintf("Calling %s", $sub));   
-    my $s = \&{ "Anna::Module::".$name."::".$sub };
-    eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $modules{$name}, $m)';
-    cluck $@ if $@;
 
     return 1;
 }
