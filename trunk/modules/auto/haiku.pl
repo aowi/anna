@@ -2,9 +2,10 @@ use strict;
 use warnings;
 use Anna::Module;
 use Anna::Utils;
-use Anna::DB;
-use POE;
-use Carp;
+
+my $mod = Anna::Module->new("haiku");
+# Module name, command, sub
+$mod->bindcmd("haiku", "haiku")->bindcmd("addhaiku", "addhaiku");
 
 ## bot_addhaiku
 # This subroutine adds a haiku poem to the database
@@ -15,7 +16,7 @@ sub addhaiku {
 	if ($haiku =~ /.* ## .* ## .*/){
 		my $query = "INSERT INTO haiku (poem, author) 
 				VALUES (?, ?)";
-		my $sth = Anna::DB->new("haiku")->prepare($query);
+		my $sth = $mod->{db}->prepare($query);
 		$sth->execute($haiku, $nick);
 		$irc->yield(privmsg => "#frokostgruppen" => 
 			'Haiku inserted, thanks '.$nick);
@@ -31,7 +32,7 @@ sub haiku {
 	my ($irc, $channel) = @_[IRC, CHAN];
 	my @haiku;
 	my $query = "SELECT * FROM haiku";
-	my $sth = Anna::DB->new("haiku")->prepare($query);
+	my $sth = $mod->{db}->prepare($query);
 	$sth->execute();
 
 	my $i = 0;
@@ -45,7 +46,7 @@ sub haiku {
 }
 
 sub init {
-	my $db = Anna::DB->new('haiku');
+	my $db = $mod->{db};
 	debug_print "Creating tables...";
 	$db->do('CREATE TABLE IF NOT EXISTS haiku (poem, author)');
 	my @haikus = (
@@ -69,8 +70,4 @@ sub init {
 		$sth->execute($haiku);
 	}
 }
-
-my $mod = Anna::Module->new("haiku");
-# Module name, command, sub
-$mod->bindcmd("haiku", "haiku")->bindcmd("addhaiku", "addhaiku");
 1;

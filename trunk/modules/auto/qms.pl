@@ -4,6 +4,7 @@ use warnings;
 use Anna::Module;
 use Anna::Utils qw(trim);
 use HTML::Entities;
+use LWP::UserAgent;
 
 sub getquote {
 	my ($url, $nr) = @_;
@@ -20,8 +21,7 @@ sub getquote {
 	my $content = $get->content;
 	$content =~ s/\n//g;
 	# Find the quote. If this function stops working, the problem 
-	# lies here. (? makes sure we don't gobble up the whole page 
-	# on random quotes. Been there, done that)
+	# lies here.
 	$content =~ /(\<p class\=\"qt\"\>|\<div class\=\"quote_output\"\>)(.*?)(\<\/p\>|\<\/div\>)/;
 	if (!$2) {
 		return "No quote found. Please check the number";

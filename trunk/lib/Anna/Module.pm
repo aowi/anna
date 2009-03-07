@@ -56,7 +56,7 @@ sub new {
     my $db = new Anna::DB $name;
     my $module = {
         name    => $name,
-        db      => $db,
+        db      => $db
     };
     my $r = bless $module, $class;
     $modules->{$name} = $r;

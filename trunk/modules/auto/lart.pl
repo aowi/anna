@@ -2,7 +2,6 @@ use strict;
 use warnings;
 
 use Anna::Module;
-use Anna::DB;
 
 my $m = Anna::Module->new('lart');
 $m->bindcmd('addlart', 'addlart')->bindcmd('lart', 'lart');
@@ -16,7 +15,7 @@ sub addlart {
 	}
 	
 	my $query = "INSERT INTO larts (lart) VALUES (?)";
-	my $sth = Anna::DB->new('lart')->prepare($query);
+	my $sth = $m->{db}->prepare($query);
 	$sth->execute($lart);
 	
 	$irc->yield(privmsg => $target => "LART inserted!");
@@ -33,7 +32,7 @@ sub lart {
 	$luser = $nick if ($luser eq 'me');
 	
 	my $query = "SELECT * FROM larts";
-	my $sth = Anna::DB->new('lart')->prepare($query);
+	my $sth = $m->{db}->prepare($query);
 	$sth->execute();
 
 	my @larts;
@@ -48,7 +47,7 @@ sub lart {
 }
 
 sub init {
-	my $db = Anna::DB->new('lart');
+	my $db = $m->{db};
 
 	$db->do('CREATE TABLE IF NOT EXISTS larts (lart)');
 	my @larts = (

@@ -1,6 +1,5 @@
 use strict;
 use warnings;
-use Anna::DB;
 use Anna::Utils;
 use Anna::Module;
 
@@ -14,7 +13,7 @@ sub mynotes {
 	my ($irc, $channel, $nick, $type) = @_[IRC, CHAN, NICK, TYPE];
 	
 	my $query = "SELECT word FROM notes WHERE author = ? ORDER BY word ASC";
-	my $sth = Anna::DB->new('notes')->prepare($query);
+	my $sth = $m->{db}->prepare($query);
 	$sth->execute($nick);
 	my (@row, @words);
 	my $i = 0;
@@ -53,7 +52,7 @@ sub note {
 	my ($note, $irc, $target, $nick) = @_[ARG, IRC, CHAN, NICK];
 	
 	my ($dbh, $query, $sth, @row);
-	$dbh = new Anna::DB 'notes';
+	$dbh = $m->{db};
 	# Print random note if nothing is specified
 	unless ($note) {
 		$query = "SELECT * FROM notes";
@@ -126,5 +125,5 @@ sub note {
 }
 
 sub init {
-	Anna::DB->new('notes')->do(q|CREATE TABLE IF NOT EXISTS notes (id, word, answer, author, date)|);
+	$m->{db}->do(q|CREATE TABLE IF NOT EXISTS notes (id, word, answer, author, date)|);
 }
