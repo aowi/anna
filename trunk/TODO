@@ -1,5 +1,9 @@
 TODO for module-refactoring:
 
+* Memory!
+ * Look into reducing the number of active DB handles. Each module has one stored
+ * Find out what is actually stored where
+
 * Implement support for binding regexps
   * Add support for specifying flags
 
