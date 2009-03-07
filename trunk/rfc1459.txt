@@ -1,31 +1,3 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
-<HTML>
-<HEAD>
-<TITLE>RFC 1459 (rfc1459) - Internet Relay Chat Protocol</TITLE>
-<META  name="description" content="RFC 1459 - Internet Relay Chat Protocol">
-<script language="JavaScript1.2">
-function erfc(s)
-{document.write("<A href=\"/rfccomment.php?rfcnum="+s+"\" target=\"_blank\" onclick=\"window.open('/rfccomment.php?rfcnum="+s+"','Popup','toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=680,height=530,left=30,top=43'); return false;\")>Comment on RFC "+s+"</A>\n");}
-//-->
-</script>
-</HEAD>
-<BODY BGCOLOR="#ffffff" TEXT="#000000">
-<P ALIGN=CENTER><IMG SRC="/images/library.jpg" HEIGHT=62 WIDTH=150 BORDER="0" ALIGN="MIDDLE" ALT=""></P>
-<H1 ALIGN=CENTER>RFC 1459 (RFC1459)</H1>
-<P ALIGN=CENTER>Internet RFC/STD/FYI/BCP Archives</P>
-
-<DIV ALIGN=CENTER>[ <a href="/rfcs/">RFC Index</a> | <A HREF="/rfcs/rfcsearch.html">RFC Search</A> | <a href="/faqs/">Usenet FAQs</a> | <a href="/contrib/">Web FAQs</a> | <a href="/docs/">Documents</a> | <a href="http://www.city-data.com/">Cities</a> ]
-<P>
-<STRONG>Alternate Formats:</STRONG>
- <A HREF="/ftp/rfc/rfc1459.txt">rfc1459.txt</A> |
- <A HREF="/ftp/rfc/pdf/rfc1459.txt.pdf">rfc1459.txt.pdf</A></DIV>
-<p align=center><script language="JavaScript"><!--
-erfc("1459");
-// --></script></p>
-<h3 align=center>RFC 1459 - Internet Relay Chat Protocol</h3>
-<HR SIZE=2 NOSHADE>
-<PRE>
-
 Network Working Group                                      J. Oikarinen
 Request for Comments: 1459                                      D. Reed
                                                                May 1993
@@ -3134,50 +3106,3 @@ Security Considerations
    Australia
 
    Email: <A HREF="mailto:avalon@coombs.anu.edu.au">avalon@coombs.anu.edu.au</A>
-
-</PRE>
-<p align=center><script language="JavaScript"><!--
-erfc("1459");
-// --></script></p>
-&nbsp;<br>
-<div align="center">
-<center>
-<table border="0" cellpadding="4" cellspacing="4" width="100%">
-<tr><td width="100%" bgcolor="#D6D6C0">
-<p><font face="Arial">Comments about this RFC:</font></p>
-<ul>
-<li><font face="Arial"><a href="/qa/rfcc-2294.html">RFC 1459: Nice protocol, but lacking some fundamentals needs in comparison with HTTP. No...</a> by Capitaine (7/28/2005)</font></li>
-<li><font face="Arial"><a href="/qa/rfcc-1566.html">RFC 1459: Not many of the 'protocol' has their example written on this page. I'm searching...</a> by Neo-S (1/3/2005)</font></li>
-<li><font face="Arial"><a href="/qa/rfcc-741.html">RFC 1459: Please Remove It Thank`s     Your!            GABBER_MIX Here </a> by GABBER_MIX (4/7/2004)</font></li>
-<li><font face="Arial"><a href="/qa/rfcc-3109.html">RFC 1459: #clube_dos_perdedores @ irc.viars.net </a> by thief (5/4/2006)</font></li>
-<li><font face="Arial"><a href="/qa/rfcc-721.html">RFC 1459: RFC1459 was created many years before Unreal IRCd was thought of.   </a> by katsklaw (4/2/2004)</font></li>
-<li><font face="Arial"><a href="/qa/rfcc-1053.html">RFC 1459: To those wondering about the gaps in this RFC: there is an updated version to...</a> by quietbritishjim (7/11/2004)</font></li>
-<li><font face="Arial"><a href="/qa/rfcc-1996.html">RFC 1459: Excellent protocol. It can be used well with C/C++ sockets or Visual Basic...</a> by python_kiss (5/10/2005)</font></li>
-<li><font face="Arial"><a href="/qa/rfcc-207.html">RFC 1459: well, it seems that some raws (numeric response) are used by some servers...</a> by crazycat (9/30/2003)</font></li>
-<li><font face="Arial"><a href="/qa/rfcc-1874.html">RFC 1459: como se rouba nicks ou axim?   </a> by BOA-NOITE (4/9/2005)</font></li>
-<li><font face="Arial"><a href="/qa/rfcc-1804.html">RFC 1459: There are also some other (informative) RFC's (2810-2813) but these are writting...</a> by Syzop (3/14/2005)</font></li>
-<li><font face="Arial"><a href="/qa/rfcc-2171.html">RFC 1459: irc kreynet.be 6667 #e-chat.be </a> by transit (6/21/2005)</font></li>
-<li><font face="Arial"><a href="/qa/rfcc-2675.html">RFC 1459: *** #clube_dos_perdedores @ irc.brasnet.org </a> by realtime (11/6/2005)</font></li>
-</ul>
-</td></tr></table> <br></center></div>
-<div align="center">
-<table border="0" cellpadding="3" width="100%" cellspacing="3">
-<tr><td width="45%">
-<p align="left">Previous: <a href="/rfcs/rfc1458.html">RFC 1458 - Requirements for Multicast Protocols</a>
-</p></td><td width="10%">&nbsp;</td><td width="45%">
-<p align="right">Next: <a href="/rfcs/rfc1460.html">RFC 1460 - Post Office Protocol - Version 3</a>
-</p></td></tr></table></div><p align="right">&nbsp;</p>
-<HR SIZE=2 NOSHADE>
-<DIV ALIGN=CENTER>[ <a href="/rfcs/">RFC Index</a> | <A HREF="/rfcs/rfcsearch.html">RFC Search</A> | <a href="/faqs/">Usenet FAQs</a> | <a href="/contrib/">Web FAQs</a> | <a href="/docs/">Documents</a> | <a href="http://www.city-data.com/">Cities</a> ]
-<P>
-</DIV>
-<SMALL>
-<ADDRESS>
-<P ALIGN=CENTER>
- 
-</P>
-</ADDRESS>
-</SMALL>
-</BODY>
-</HTML>
-
