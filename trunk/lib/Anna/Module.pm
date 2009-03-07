@@ -11,17 +11,16 @@ our @ISA = qw(Exporter);
 use Anna::DB;
 use Anna::Config;
 use Anna::Utils;
+use Anna::Module::IRC;
+
 use Carp qw(carp cluck croak confess);
 use Symbol qw(delete_package);
 
-# var: %modules
-# Global, that holds the name of all modules with registered events. Don't
-# mess with this outside Anna::Module!
 our $modules         = {};
 our $module_commands = {};
 our $module_messages = {};
 our $module_regexps  = {};
-# ugly, dirty and alltogether bad.
+
 # These subs are exported per default and used as constant expressions by 
 # modules, to avoid having to keep track of argument order, and to allow us to
 # reorder or add more args later, without breaking existing modules.
@@ -33,15 +32,6 @@ sub HOST () {  3 } # host of the sender
 sub TYPE () {  4 } # type of message/event (privmsg, public, join, part, ...)
 sub ARG  () {  5 } # any arguments exactly as they were typed (no processing is done)
 
-# sub: new
-# Create new instance of Anna::Module. Modules can use this to register for 
-# events/commands and much more.
-#
-# Parameters:
-#   name - module name
-#
-# Returns:
-#   Anna::Module-object, zero on failure
 sub new {
     my ($class, $name) = @_;
     unless (defined $name && $name) {
@@ -52,26 +42,20 @@ sub new {
         carp "Module $name already loaded";
         return 0;
     }
+    cluck __PACKAGE__;
     my $db = new Anna::DB $name;
+    $DB::single=2;
+    my $irc = Anna::Module::IRC->new;
     my $module = {
         name    => $name,
-        db      => $db
+        db      => $db,
+        irc     => $irc
     };
     my $r = bless $module, $class;
     $modules->{$name} = $r;
     return $r;
 }
 
-# sub: module_loaded
-# Checks if a module with the supplied name has already been loaded
-#
-# Parameters:
-#   name - module name
-#
-# Returns:
-#   1 if module is loaded
-#   0 if module isn't loaded
-#   1 if called as a method
 sub module_loaded {
     return undef unless (@_ == 1);
     my $n = shift;
@@ -84,15 +68,6 @@ sub module_loaded {
     return 0;
 }
 
-
-# sub: empty_db
-# Removes all commands from the command-table. Used at startup to clean up leftover cruft
-#
-# Parameters:
-#   none
-#
-# Returns:
-#   1 on success, 0 on failure
 sub empty_db {
     if (@_ && ref $_[0]) {
         # Called as method, abort
@@ -338,10 +313,18 @@ sub do_cmd {
 
     my ($c, $m) = split(' ', $cmd, 2);
     if (exists $module_commands->{$c}) {
-        debug_print(sprintf "Command %s resolved to Anna::Module::%s", $c, join('::', @{$module_commands->{$c}}));
+        debug_print(sprintf "Command %s resolved to Anna::Module::Modules::%s", $c, join('::', @{$module_commands->{$c}}));
+
+        $modules->{$module_commands->{$c}->[0]}->{irc}->stash({
+            channel => $channel,
+            nick    => $nick,
+            host    => $host,
+            type    => $type
+        });
         my $s = \&{ "Anna::Module::".$module_commands->{$c}->[0]."::".$module_commands->{$c}->[1] };
         eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $m)';
         cluck $@ if $@;
+        $modules->{$module_commands->{$c}->[0]}->{irc}->clearstash;
     }
     return 1;
 }
@@ -363,13 +346,21 @@ sub do_cmd {
 sub do_msg {
     debug_print(sprintf "do_msg called with parameters %s", join(', ',@_));
     my ($text, $heap, $channel, $nick, $host, $type) = @_;
-    
+
     my ($msg, $args) = split(' ', $text, 2);
     if (exists $module_messages->{$msg}) {
-        debug_print(sprintf "Message %s resolved to Anna::Module::%s", $msg, join('::', @{$module_messages->{$msg}}));
+        debug_print(sprintf "Message %s resolved to Anna::Module::Modules::%s", $msg, join('::', @{$module_messages->{$msg}}));
+
+        $modules->{$module_commands->{$msg}->[0]}->{irc}->stash({
+            channel => $channel,
+            nick    => $nick,
+            host    => $host,
+            type    => $type
+        });
         my $s = \&{ "Anna::Module::".$module_messages->{$msg}->[0]."::".$module_messages->{$msg}->[1]};
         eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $args)';
         cluck $@ if $@;
+        $modules->{$module_commands->{$msg}->[0]}->{irc}->clearstash;
         return 1;
     }
 
@@ -430,13 +421,13 @@ sub loadfullpath {
     verbose_print(sprintf("Loading module %s", $m));
 
     eval qq{
-        package Anna::Module::$m; 
+        package Anna::Module::Modules::$m; 
         require qq|$path|;
         &init if (defined &init);
     };
     if ($@) {
         carp "Failed to load $m: $@";
-        unload $m; # Cleanup cruft
+        unload($m); # Cleanup cruft
         return 0;
     }
     package Anna::Module;
@@ -460,7 +451,7 @@ sub unload {
     verbose_print(sprintf("Unloading module %s", $m));
 
     debug_print "Deleting symbols";
-    delete_package('Anna::Module::'.$m);
+    delete_package('Anna::Module::Modules::'.$m);
 
     debug_print "Deleting module info";
     delete $modules->{$m};
