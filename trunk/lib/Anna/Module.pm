@@ -459,8 +459,14 @@ sub unload {
     }
     my $m = shift;
     verbose_print(sprintf("Unloading module %s", $m));
+
+    debug_print "Deleting symbols";
     delete_package('Anna::Module::'.$m);
+
+    debug_print "Deleting module info";
     delete $modules->{$m};
+
+    debug_print "Cleaning database";
     my $dbh = new Anna::DB;
     unless ($dbh) {
         carp "Unable to obtain DB handle: $DBI::errstr";
@@ -470,6 +476,20 @@ sub unload {
         carp "Failed to unload module $m: $DBI::errstr";
         return 0;
     }
+
+    debug_print "Removing message handlers";
+    foreach my $key (keys %$module_messages) {
+        delete $module_messages->{$key}
+            if ($module_messages->{$key}->[0] eq $m);
+    }
+
+    debug_print "Removing command handlers";
+    foreach my $key (keys %$module_commands) {
+        delete $module_commands->{$key}
+            if ($module_commands->{$key}->[0] eq $m);
+    }
+
+    debug_print "Done removing module";
     return 1;
 }
 
