@@ -1,3 +1,5 @@
+NB: This is outdated!
+
 Authentication
 ==============
 Anna^ keeps track of authentications with a sqlite table. Authentications can 

@@ -1,9 +1,4 @@
 TODO for module-refactoring:
-* Make module loading a bit saner.
-  Three routines: loaddir, loadmod and loadpath. 
-  loaddir and loadmod are wrappers, that call loadpath with appropriate paths.
-  loaddir and loadmod should only call loadpath if the module isn't already loaded.
-  loadpath returns 1 or 0 depending on success.
 
 * Implement support for binding regexps
   * Add support for specifying flags
@@ -20,19 +15,17 @@ TODO for module-refactoring:
 
 * Dynamic module-loading (that is, allow admins to issue 'load foo' to load 
   module foo)
-  For the time being, the loading-stuff is working, but has to be called 
-  manually from anna.pl. 
+ * Works, but currently all registered users can do this. Needs user_can from
+   auth stuff
 
 * Flesh out a sane interface for module-building 
-
-* Take a look at the eggdrop interface
-  http://www.eggheads.org/support/egghtml/1.6.18/tcl-commands.html
-  and the rbot interface (it's probably a bit better)
-  Anna should load all modules from core/ and auto/ pr. default, when starting.
-  
-  Perhaps we should make a loader-module, that takes care of from-irc-loading. 
-  This should  be a core-module that binds the load-command, and then issues 
-  Anna::Module::load after rights-checking and the like.
+  * We need easy way to
+   * Print a response to the target
+   * Print a response to the target highlighting the nickname that sent the
+     message
+   * Print a response to the nick the sent the message
+   * Remove bindings
+   * Bind to events (needs our own event-handler)
 
 * EXTENSIVE TESTING OF MODULE-RELATED FAILURES (e.g. modules crashing, failing 
   to compile, doing funky stuff when loaded, issuing 'die' at weird times and 
