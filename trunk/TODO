@@ -17,9 +17,6 @@ TODO for module-refactoring:
 
 * Implement onunload, onwhatelse?
 
-* Mark modules as un-unloadable (or refuse to unload core modules)
- * For now, we just refuse to unload core-modules
-
 * Dynamic module-loading (that is, allow admins to issue 'load foo' to load 
   module foo)
  * Works, but currently all registered users can do this. Needs user_can from

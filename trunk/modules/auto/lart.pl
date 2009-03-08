@@ -7,23 +7,22 @@ my $m = Anna::Module->new('lart');
 $m->bindcmd('addlart', 'addlart')->bindcmd('lart', 'lart');
 
 sub addlart {
-	my ($irc, $target, $lart) = @_[IRC, CHAN, ARG];
+	my $lart = $_[ARG];
 	
 	if ($lart !~ /##/) {
-		$irc->yield(privmsg => $target => 
-			"Invalid LART. A Lart must contain '##' which is replaced by the luser's nick");
+		$m->irc->reply("Invalid LART. A Lart must contain '##' which is replaced by the luser's nick");
 	}
 	
 	my $query = "INSERT INTO larts (lart) VALUES (?)";
 	my $sth = $m->{db}->prepare($query);
 	$sth->execute($lart);
 	
-	$irc->yield(privmsg => $target => "LART inserted!");
+	$m->irc->reply("LART inserted!");
 }
 
 
 sub lart {
-	my ($irc, $target, $nick, $luser) = @_[IRC, CHAN, NICK, ARG];
+	my ($irc, $nick, $luser, $target) = @_[IRC, NICK, ARG, CHAN];
 	$luser ||= $nick;
 	if (lc $luser eq lc $irc->nick_name) {
 		$irc->yield(privmsg => $target => $nick . ": NAY THOU!");

@@ -7,7 +7,7 @@ my $mod = new Anna::Module 'dice';
 $mod->bindregexp('\d+d\d+', 'dice')->bindcmd('dice', 'dice');
 
 sub dice {
-	my ($msg, $nick, $target) = @_[ARG, NICK, CHAN];
+	my ($msg, $nick) = @_[ARG, NICK];
 	if ($msg =~ /(\d+)d(\d+)/i) {
 		my $dice = $1;
 		my $sides = $2;

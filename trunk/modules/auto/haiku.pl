@@ -4,32 +4,25 @@ use Anna::Module;
 use Anna::Utils;
 
 my $mod = Anna::Module->new("haiku");
-# Module name, command, sub
 $mod->bindcmd("haiku", "haiku")->bindcmd("addhaiku", "addhaiku");
 
-## bot_addhaiku
-# This subroutine adds a haiku poem to the database
-# params is the poem to be added and $nick (to get the author)
 sub addhaiku {
-	my ($haiku, $irc, $channel, $nick) = @_[ARG, IRC, CHAN, NICK];
+	my ($haiku, $nick) = @_[ARG, NICK];
 	
 	if ($haiku =~ /.* ## .* ## .*/){
 		my $query = "INSERT INTO haiku (poem, author) 
 				VALUES (?, ?)";
 		my $sth = $mod->{db}->prepare($query);
 		$sth->execute($haiku, $nick);
-		$irc->yield(privmsg => "#frokostgruppen" => 
-			'Haiku inserted, thanks '.$nick);
+		$mod->irc->reply('Haiku inserted, thanks '.$nick);
 		return;
 	}
-	$irc->yield(privmsg => $channel =>
-		"Wrong syntax for haiku. Should be '<line1> ## <line2> ## <line3>'");
+	$mod->irc->reply_hilight("Wrong syntax for haiku. Should be '<line1> ## <line2> ## <line3>'");
 }
 
 ## bot_haiku
 # This returns a haiku
 sub haiku {
-	my ($irc, $channel) = @_[IRC, CHAN];
 	my @haiku;
 	my $query = "SELECT * FROM haiku";
 	my $sth = $mod->{db}->prepare($query);
@@ -42,7 +35,7 @@ sub haiku {
 	}
 	my $out = $haiku[rand scalar @haiku];
 	my @h = split(' ## ', $out);
-	$irc->yield(privmsg => $channel => $_) for @h;
+	$mod->irc->reply($_) for @h;
 }
 
 sub init {
