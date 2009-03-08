@@ -12,6 +12,7 @@ use Anna::DB;
 use Anna::Config;
 use Anna::Utils;
 use Anna::Module::IRC;
+my $a = new Anna::Module::IRC;
 
 use Carp qw(carp cluck croak confess);
 use Symbol qw(delete_package);
@@ -44,7 +45,8 @@ sub new {
     }
     
     # XXX: FIXME: TODO: Figure out this has to be called like that
-    my $irc = new Anna::Module::IRC;
+    $DB::Simple=2;
+    my $irc = Anna::Module::IRC->new();
     my $db = new Anna::DB $name;
     my $module = {
         name    => $name,

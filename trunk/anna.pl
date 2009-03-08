@@ -48,7 +48,7 @@ $SIG{'INT'} = 'ABORT';
 
 # Clean out remnants from last session
 #Anna::Config::empty_db;
-Anna::Module::empty_db; # XXX: Makes firstrun fail
+# Anna::Module::empty_db; # XXX: Makes firstrun fail
 
 my $config = new Anna::Config;
 
@@ -110,7 +110,7 @@ debug_print("Testing debug level");
 verbose_print("Testing verbose level");
 
 # Check for first-run
-if (!(-e Anna::Utils->CONFIGDIR."/anna.db")) {
+if (!(-e Anna::Utils->CONFIGDIR."/anna.db") || !(-e "anna.db")) {
     # First run
     my $dbf = Anna::Utils->CONFIGDIR."/anna.db";
     print "This seems to be the first time you're running Anna^... welcome!\n";
