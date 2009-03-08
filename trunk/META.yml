@@ -1,0 +1,50 @@
+---
+name: Anna
+version: 0.50
+author:
+  - 'Anders Ossowicki <and@vmn.dk>'
+abstract: Anna^ is a small and lightweight IRC Bot
+license: gpl
+resources:
+  license: http://opensource.org/licenses/gpl-license.php
+requires:
+  Carp: 0
+  DBD::SQLite: 1.12
+  DBI: 1.52
+  File::Copy: 0
+  Getopt::Long: 0
+  HTML::Entities: 1.35
+  LWP::UserAgent: 5.805
+  POE: 0.9500
+  POE::Component::IRC: 5.16
+  Term::ReadKey: 2.30
+  perl: 5.10.0
+recommends:
+  Data::Dumper: 0
+provides:
+  Anna::Auth:
+    file: lib/Anna/Auth.pm
+  Anna::CTCP:
+    file: lib/Anna/CTCP.pm
+  Anna::Config:
+    file: lib/Anna/Config.pm
+  Anna::Connection:
+    file: lib/Anna/Connection.pm
+  Anna::DB:
+    file: lib/Anna/DB.pm
+  Anna::Debug:
+    file: lib/Anna/Debug.pm
+  Anna::Log:
+    file: lib/Anna/Log.pm
+  Anna::Module:
+    file: lib/Anna/Module.pm
+  Anna::ModuleGuts::IRC:
+    file: lib/Anna/ModuleGuts/IRC.pm
+  Anna::Output:
+    file: lib/Anna/Output.pm
+  Anna::Utils:
+    file: lib/Anna/Utils.pm
+generated_by: Module::Build version 0.3
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2
