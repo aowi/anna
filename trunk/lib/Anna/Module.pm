@@ -44,7 +44,7 @@ sub new {
     }
     
     # XXX: FIXME: TODO: Figure out this has to be called like that
-    my $irc = Anna::Module::IRC::new("Anna::Module::IRC");
+    my $irc = new Anna::Module::IRC;
     my $db = new Anna::DB $name;
     my $module = {
         name    => $name,
@@ -285,6 +285,7 @@ sub loaddir {
         debug_print(sprintf("%s does not exist or is not a directory - skipped!", $dir));
         return;
     }
+    debug_print(sprintf "Loading modules from %s", $dir);
     opendir(DIR, $dir) or confess $!;
     while (defined(my $file = readdir(DIR))) {
         if ($file =~ m/[.]pl$/) {
@@ -317,16 +318,18 @@ sub do_cmd {
     my ($c, $m) = split(' ', $cmd, 2);
     if (exists $module_commands->{$c}) {
         debug_print(sprintf "Command %s resolved to Anna::Module::Modules::%s", $c, join('::', @{$module_commands->{$c}}));
-
+        debug_print("Stashing info");
         $modules->{$module_commands->{$c}->[0]}->{irc}->stash({
             channel => $channel,
             nick    => $nick,
             host    => $host,
             type    => $type
         });
+        debug_print("Calling module");
         my $s = \&{ "Anna::Module::Modules::".$module_commands->{$c}->[0]."::".$module_commands->{$c}->[1] };
         eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $m)';
         cluck $@ if $@;
+        debug_print("Clearing stash");
         $modules->{$module_commands->{$c}->[0]}->{irc}->clearstash;
     }
     return 1;
@@ -353,16 +356,18 @@ sub do_msg {
     my ($msg, $args) = split(' ', $text, 2);
     if (exists $module_messages->{$msg}) {
         debug_print(sprintf "Message %s resolved to Anna::Module::Modules::%s", $msg, join('::', @{$module_messages->{$msg}}));
-
+        debug_print("Stashing info");
         $modules->{$module_commands->{$msg}->[0]}->{irc}->stash({
             channel => $channel,
             nick    => $nick,
             host    => $host,
             type    => $type
         });
+        debug_print("Calling module");
         my $s = \&{ "Anna::Module::Modules::".$module_messages->{$msg}->[0]."::".$module_messages->{$msg}->[1]};
         eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $args)';
         cluck $@ if $@;
+        debug_print("Clearing stash");
         $modules->{$module_commands->{$msg}->[0]}->{irc}->clearstash;
         return 1;
     }
@@ -385,9 +390,9 @@ sub load {
         return 0;
     }
     my $m = shift;
-        
+ 
     $m =~ s/[.]pl$//;
-
+    debug_print(sprintf "Trying to load %s", $m);
     my @path = (
         Anna::Utils->CONFIGDIR."/modules/", 
         Anna::Utils->CONFIGDIR."/modules/core/", 
@@ -400,17 +405,17 @@ sub load {
     my ($found, $ret) = 0;
     foreach my $p (@path) {
         if (-f $p.$m.".pl") {
+            debug_print(sprintf "%s resolved to %s", $m, $p.$m.".pl");
             $ret = loadfullpath($p.$m.".pl", $m); 
             $found = 1;
             last;
         }
     }
-    if ($found) {
-        return $ret;
-    } else {
+    if (!$found) {
         warn_print(sprintf("Module %s not found", $m));
         return 0;
     }
+    return $ret;
 }
 
 sub loadfullpath {
@@ -422,7 +427,8 @@ sub loadfullpath {
     }
 
     verbose_print(sprintf("Loading module %s", $m));
-
+    
+    debug_print("Running eval...");
     eval qq{
         package Anna::Module::Modules::$m; 
         require qq|$path|;
@@ -433,6 +439,7 @@ sub loadfullpath {
         unload($m); # Cleanup cruft
         return 0;
     }
+    debug_print("Module loaded");
     package Anna::Module;
     return 1;
 }
