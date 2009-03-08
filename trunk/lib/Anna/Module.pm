@@ -500,4 +500,9 @@ sub unload {
     return 1;
 }
 
+sub irc {
+    my $self = shift;
+    return $self->{irc};
+}
+
 1;
