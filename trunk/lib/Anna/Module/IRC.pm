@@ -11,17 +11,23 @@ our @ISA = qw(Exporter);
 sub new {
     return bless {}, shift;
 }
+
 sub sendmsg {}
 sub sendaction {}
-sub reply {}
-sub reply_hilight {}
+
+sub reply {
+    my $self = shift;
+    $self->{stash}->{irc}->yield(privmsg => $self->{stash}->{target} => shift);
+}
+
+sub reply_hilight {
+    my $self = shift;
+    $self->{stash}->{irc}->yield(privmsg => $self->{stash}->{target} => $self->{stash}->{nick} . ": ", shift);
+}
 
 sub stash {
     my $self = shift;
-    my $params = shift;
-    while (my ($k, $v) = each %$params) {
-        $self->{stash}->{$k} = $v;
-    }
+    $self->{stash} = shift;
 }
 
 sub clearstash {

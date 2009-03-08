@@ -259,9 +259,12 @@ sub execute {
     while (my $res = $sth->fetchrow_hashref)  {
         my ($rx, $name, $sub) = ($res->{'value'}, $res->{'name'}, $res->{'sub'});
         if ($msg =~ m/$rx/) {
-            my $s = \&{ "Anna::Module::".$name."::".$sub};
-            eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $modules->{$name}, $msg)';
+            debug_print(sprintf "Matched regexp %s which was resolved to Anna::Module::Modules::%s::%s",
+                $rx, $name, $sub);
+            my $s = \&{ "Anna::Module::Modules::".$name."::".$sub};
+            eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $msg)';
             cluck $@ if $@;
+            return 1;
         }
     }
     debug_print "It didn't... discarding.";
