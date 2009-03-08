@@ -5,7 +5,7 @@ use Anna::Module;
 use Anna::Utils;
 use Anna::Auth;
 
-my $m = Anna::Module->new('auth');
+my $m = Anna::Module->new('auth')->protect;
 $m->bindmsg('auth', 'auth')->bindmsg('register', 'register')->bindcmd('whoami', 'whoami');
 
 # sub: auth
