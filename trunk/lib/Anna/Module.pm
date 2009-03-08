@@ -364,7 +364,7 @@ sub do_msg {
     if (exists $module_messages->{$msg}) {
         debug_print(sprintf "Message %s resolved to Anna::Module::Modules::%s", $msg, join('::', @{$module_messages->{$msg}}));
         debug_print("Stashing info");
-        $modules->{$module_commands->{$msg}->[0]}->{irc}->stash({
+        $modules->{$module_messages->{$msg}->[0]}->{irc}->stash({
             target  => $channel,
             nick    => $nick,
             host    => $host,
@@ -375,7 +375,7 @@ sub do_msg {
         eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $args)';
         cluck $@ if $@;
         debug_print("Clearing stash");
-        $modules->{$module_commands->{$msg}->[0]}->{irc}->clearstash;
+        $modules->{$module_messages->{$msg}->[0]}->{irc}->clearstash;
         return 1;
     }
 

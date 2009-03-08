@@ -1509,7 +1509,7 @@ sub on_socketerr {
     my $c = new Anna::Config;
 
     irclog('status' => sprintf "-!- Failed to establish connection to %s: %s", $c->get('server'), $error);
-    error_print(sprint("Failed to establish connection to %s: %s", $c->get('server'), $error));
+    error_print(sprintf("Failed to establish connection to %s: %s", $c->get('server'), $error));
     $kernel->yield("reconnect");
 }
 
