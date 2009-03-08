@@ -1,7 +1,9 @@
 # vim: et:ts=4:sw=4
-package Anna::Module::IRC;
+package Anna::ModuleGuts::IRC;
 use strict;
 use warnings;
+
+use POE;
 
 use Exporter;
 our @EXPORT_OK = qw();
@@ -17,12 +19,12 @@ sub sendaction {}
 
 sub reply {
     my $self = shift;
-    $self->{stash}->{irc}->yield(privmsg => $self->{stash}->{target} => shift);
+    $poe_kernel->get_active_session->get_heap->{irc}->yield(privmsg => $self->{stash}->{target} => shift);
 }
 
 sub reply_hilight {
     my $self = shift;
-    $self->{stash}->{irc}->yield(privmsg => $self->{stash}->{target} => $self->{stash}->{nick} . ": ", shift);
+    $poe_kernel->get_active_session->get_heap->{irc}->yield(privmsg => $self->{stash}->{target} => $self->{stash}->{nick} . ": ". shift);
 }
 
 sub stash {

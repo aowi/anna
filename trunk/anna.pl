@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# vim: set expandtab:tabstop=4:shiftwidth=4
+# vim: et:ts=4:sw=4
 use strict;
 use warnings;
 

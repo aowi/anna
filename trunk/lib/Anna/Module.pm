@@ -11,8 +11,7 @@ our @ISA = qw(Exporter);
 use Anna::DB;
 use Anna::Config;
 use Anna::Utils;
-use Anna::Module::IRC;
-my $a = new Anna::Module::IRC;
+use Anna::ModuleGuts::IRC;
 
 use Carp qw(carp cluck croak confess);
 use Symbol qw(delete_package);
@@ -44,9 +43,7 @@ sub new {
         return 0;
     }
     
-    # XXX: FIXME: TODO: Figure out this has to be called like that
-    $DB::Simple=2;
-    my $irc = Anna::Module::IRC->new();
+    my $irc = new Anna::ModuleGuts::IRC;
     my $db = new Anna::DB $name;
     my $module = {
         name    => $name,
@@ -263,9 +260,17 @@ sub execute {
         if ($msg =~ m/$rx/) {
             debug_print(sprintf "Matched regexp %s which was resolved to Anna::Module::Modules::%s::%s",
                 $rx, $name, $sub);
+            $modules->{$name}->{irc}->stash({
+                target  => $channel,
+                nick    => $nick,
+                host    => $host,
+                type    => $type
+            });
+ 
             my $s = \&{ "Anna::Module::Modules::".$name."::".$sub};
             eval '$s->($heap->{irc}, $channel, $nick, $host, $type, $msg)';
             cluck $@ if $@;
+            $modules->{$name}->{irc}->clearstash();
             return 1;
         }
     }
@@ -322,7 +327,7 @@ sub do_cmd {
         debug_print(sprintf "Command %s resolved to Anna::Module::Modules::%s", $c, join('::', @{$module_commands->{$c}}));
         debug_print("Stashing info");
         $modules->{$module_commands->{$c}->[0]}->{irc}->stash({
-            channel => $channel,
+            target  => $channel,
             nick    => $nick,
             host    => $host,
             type    => $type
@@ -360,7 +365,7 @@ sub do_msg {
         debug_print(sprintf "Message %s resolved to Anna::Module::Modules::%s", $msg, join('::', @{$module_messages->{$msg}}));
         debug_print("Stashing info");
         $modules->{$module_commands->{$msg}->[0]}->{irc}->stash({
-            channel => $channel,
+            target  => $channel,
             nick    => $nick,
             host    => $host,
             type    => $type

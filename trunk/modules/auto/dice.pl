@@ -2,14 +2,12 @@ use strict;
 use warnings;
 
 use Anna::Module;
-use feature 'say';
 
 my $mod = Anna::Module->new('dice');
 $mod->bindregexp('\d+d\d+', 'dice')->bindcmd('dice', 'dice');
 
 sub dice {
 	my ($irc, $msg, $nick, $target) = @_[IRC, ARG, NICK, CHAN];
-	say $msg;	
 	if ($msg =~ /(\d+)d(\d+)/i) {
 		my $dice = $1;
 		my $sides = $2;
@@ -44,7 +42,7 @@ sub dice {
 		}
 		
 		if ($dice <= 50) {
-			$mod->{irc}->reply_higlight($value . ' (' . $throws . ')');
+			$mod->{irc}->reply_hilight($value . ' (' . $throws . ')');
 		} else {
 			$irc->yield(privmsg => $target => $nick . ': ' . $value . ' (too many throws to show)');
 		}
