@@ -7,31 +7,35 @@ use Data::Dumper;
 use Anna::Auth;
 use POE;
 
-my $m = Anna::Module->new('modulehandler');
+my $m = Anna::Module->new('modulehandler')->protect;
 $m->bindcmd('load', 'module_load');
 $m->bindcmd('unload', 'module_unload');
 $m->bindcmd('listmodules', 'module_list');
 
 sub module_load {
-    if (Anna::Auth->new->host2user($_[HOST])) {
-        if (!Anna::Module::load($_[ARG])) {
-            $_[IRC]->yield(privmsg => $_[CHAN] => $_[NICK] . ": Failed to load " . $_[ARG]);
-        }
+    unless (Anna::Auth->new->host2user($_[HOST])) {
+        $m->irc->reply_hilight("You don't have permission to load modules!");
         return;
     }
-    $_[IRC]->yield(privmsg => $_[CHAN] => $_[NICK] . ": You don't have permission to load modules!");
+    if (!Anna::Module::load($_[ARG])) {
+        $m->irc->reply_hilight("Failed to load " . $_[ARG]);
+    }
 }
 
 sub module_unload {
-    if (Anna::Auth->new->host2user($_[HOST])) {
-        if (Anna::Module::unload($_[ARG])) {
-            $_[IRC]->yield(privmsg => $_[CHAN] => $_[NICK] . ": Unloaded module " . $_[ARG]);
-        } else {
-            $_[IRC]->yield(privmsg => $_[CHAN] => $_[NICK] . ": Failed to unload " . $_[ARG]);
-        }
+    unless (Anna::Auth->new->host2user($_[HOST])) {
+        $m->irc->reply_hilight("You don't have permission to unload modules!");
         return;
     }
-    $_[IRC]->yield(privmsg => $_[CHAN] => $_[NICK] . ": You don't have permission to unload modules!");
+    if ($m->is_protected($_[ARG])) {
+        $m->irc->reply_hilight(sprintf "Module %s is protected and cannot be unloaded", $_[ARG]);
+        return;
+    }
+    if (Anna::Module::unload($_[ARG])) {
+        $m->irc->reply_hilight("Unloaded module " . $_[ARG]);
+    } else {
+        $m->irc->reply_hilight("Failed to unload " . $_[ARG]);
+    }
 }
 
 sub module_list {

@@ -12,14 +12,17 @@ use Anna::DB;
 use Anna::Config;
 use Anna::Utils;
 use Anna::ModuleGuts::IRC;
+use Data::Dumper;
 
 use Carp qw(carp cluck croak confess);
 use Symbol qw(delete_package);
+use 5.010;
 
 our $modules         = {};
 our $module_commands = {};
 our $module_messages = {};
 our $module_regexps  = {};
+our $protected_modules = [];
 
 # These subs are exported per default and used as constant expressions by 
 # modules, to avoid having to keep track of argument order, and to allow us to
@@ -465,6 +468,10 @@ sub unload {
         return 0;
     }
     my $m = shift;
+    if ($m ~~ @$protected_modules) {
+        warn_print(sprintf "Tried to unload module %s which is protected", $m);
+        return 0;
+    }
     verbose_print(sprintf("Unloading module %s", $m));
 
     debug_print "Deleting symbols";
@@ -505,4 +512,16 @@ sub irc {
     return $self->{irc};
 }
 
+sub protect {
+    my $self = shift;
+    print Dumper($self);
+    push @$protected_modules, $self->{name}
+        unless ($self->{name} ~~ @$protected_modules);
+    return $self;
+}
+
+sub is_protected {
+    my ($self, $m) = @_;
+    return $m ~~ @$protected_modules;
+}
 1;

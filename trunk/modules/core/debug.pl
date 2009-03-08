@@ -6,7 +6,7 @@ use Anna::Module;
 use Data::Dumper;
 use POE;
 
-my $m = Anna::Module->new('debug');
+my $m = Anna::Module->new('debug')->protect;
 $m->bindcmd('dumpvars', 'dumpvars');
 $m->bindcmd('kernel', 'kernel_stuff');
 $m->bindcmd('debug_modules', 'modules');
@@ -28,6 +28,8 @@ sub modules {
     print Dumper($Anna::Module::module_messages);
     print "Module-bound regular expressions:\n";
     print Dumper($Anna::Module::module_regexps);
+    print "Protected modules:\n";
+    print Dumper($Anna::Module::protected_modules);
 }
 
 1;
