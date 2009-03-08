@@ -7,9 +7,10 @@ use Data::Dumper;
 use Anna::Auth;
 use POE;
 
-my $m = Anna::Module->new('module');
+my $m = Anna::Module->new('modulehandler');
 $m->bindcmd('load', 'module_load');
 $m->bindcmd('unload', 'module_unload');
+$m->bindcmd('listmodules', 'module_list');
 
 sub module_load {
     if (Anna::Auth->new->host2user($_[HOST])) {
@@ -31,6 +32,14 @@ sub module_unload {
         return;
     }
     $_[IRC]->yield(privmsg => $_[CHAN] => $_[NICK] . ": You don't have permission to unload modules!");
+}
+
+sub module_list {
+    my @mods;
+    while (my ($k, $v) = each %$Anna::Module::modules) {
+        push @mods, $k;
+    }
+    $m->irc->reply(sprintf "Loaded modules: %s", join(", ", @mods));
 }
 
 1;
