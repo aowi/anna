@@ -24,9 +24,9 @@ TODO for module-refactoring:
 
 * Flesh out a sane interface for module-building 
   * We need easy way to
-   * Print a response to the target
+   * Print a response to the target - done
    * Print a response to the target highlighting the nickname that sent the
-     message
+     message - done
    * Print a response to the nick the sent the message
    * Remove bindings
    * Bind to events (needs our own event-handler)
