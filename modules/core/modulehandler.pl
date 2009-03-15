@@ -28,6 +28,10 @@ sub module_unload {
         $m->irc->reply_hilight("You don't have permission to unload modules!");
         return;
     }
+    unless (Anna::ModuleHandler->new->module_loaded($_[ARG])) {
+        $m->irc->reply_hilight(sprintf "Module %s isn't loaded", $_[ARG]);
+        return;
+    }
     if ($m->is_protected($_[ARG])) {
         $m->irc->reply_hilight(sprintf "Module %s is protected and cannot be unloaded", $_[ARG]);
         return;
