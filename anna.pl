@@ -34,6 +34,7 @@ use Anna::Log;
 use Anna::CTCP;
 use Anna::DB;
 use Anna::Module;
+use Anna::ModuleHandler;
 use Anna::Auth;
 use File::Copy;
 use Term::ReadKey;
@@ -256,10 +257,10 @@ sub _start {
     $heap->{irc} = $irc;
     
     # Load modules from homedir first, so they will mask system-wide modules
-    Anna::Module::loaddir(Anna::Utils->CONFIGDIR."/modules/core/");
-    Anna::Module::loaddir(Anna::Utils->CONFIGDIR."/modules/auto/");
-    Anna::Module::loaddir("/usr/share/anna/modules/core/");
-    Anna::Module::loaddir("/usr/share/anna/modules/auto/");
+    Anna::ModuleHandler::loaddir(Anna::Utils->CONFIGDIR."/modules/core/");
+    Anna::ModuleHandler::loaddir(Anna::Utils->CONFIGDIR."/modules/auto/");
+    Anna::ModuleHandler::loaddir("/usr/share/anna/modules/core/");
+    Anna::ModuleHandler::loaddir("/usr/share/anna/modules/auto/");
     # Connect
     $kernel->yield("connect");
 }
@@ -326,7 +327,7 @@ sub parse_message {
     }
     
     # Check for module-bound commands
-    Anna::Module::execute($msg, $heap, $target, $nick, $host, $type) 
+    Anna::ModuleHandler::execute($msg, $heap, $target, $nick, $host, $type) 
         or error_print "Error while handling $msg.";
 
     if ($type eq "public") {
