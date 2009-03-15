@@ -406,8 +406,6 @@ sub parse_message {
     
     if ($cmd =~ /^voice(me|)$/) {
         $out = bot_voice($heap, $from);
-    } elsif ($cmd =~ /^rstats$/) {
-        $out = bot_roulette_stats($heap);
     } elsif ($cmd =~ /^search\s+(.*)$/) {
         $out = bot_search($heap, $1);
     } elsif ($cmd =~ /^rot13\s+(.*)$/i) {
@@ -422,10 +420,6 @@ sub parse_message {
         $out = bot_quote($heap);
     } elsif ($cmd =~ /^addquote\s+(.*)$/i) {
         $out = bot_addquote($heap, $nick, $1);
-    } elsif ($cmd =~ /^roulette$/i) {
-        $out = bot_roulette($heap, $nick);
-    } elsif ($cmd =~/^reload$/i) {
-        $out = bot_reload($heap);
     } elsif ($cmd =~ /^up(time|)$/i) {
         $out = bot_uptime($heap);
     } elsif ($cmd =~ /^seen\s+(.*)$/i) {
@@ -777,21 +771,6 @@ sub bot_quote {
     return $quote;
 }
 
-## bot_reload
-# Reloads the roulette gun (only for weenies)
-# TODO: add number of reloads to !rstats
-sub bot_reload {
-    my $heap = shift;
-    return unless defined $heap;
-
-    my $query = "DELETE FROM roulette_shots";
-    my $sth = Anna::DB->new->prepare($query);
-    $sth->execute();
-    $heap->{irc}->yield(ctcp => Anna::Config->new->get('channel') => 'ACTION reloads...');
-    return 'FALSE';
-}
-
-
 ## bot_rmop
 # Removes a user from list of opers. Takes three params - username to remove, 
 # sender and the heap
@@ -838,126 +817,6 @@ sub bot_rot13 {
 
     $str =~ y/A-Za-z/N-ZA-Mn-za-m/;
     return $str;
-}
-
-## bot_roulette
-# Random chance of getting killed (kicked)
-# Do you feel lucky?
-sub bot_roulette {
-    my ($heap, $nick) = @_;
-    return "Wrong param-count in roulette... please report this!"
-        unless (defined $heap && defined $nick);
-    
-    my ($shot, $hit, $out);
-
-    my $dbh = new Anna::DB;
-    my $query = "SELECT * FROM roulette_shots";
-    my $sth = $dbh->prepare($query);
-    $sth->execute();
-    my @row;
-    if (@row = $sth->fetchrow()) {
-        $shot = $row[0];
-        $hit = $row[1];
-    } else {
-        $shot = 0;
-        $hit = int(rand(6));
-        $hit = 6 if ($hit == 0);
-    }
-    $shot += 1;
-    $query = "DELETE FROM roulette_shots";
-    $sth = $dbh->prepare($query);
-    $sth->execute();
-    if ($shot == $hit) {
-        # Bang, you're dead
-        $out = $nick . ": chamber " . $shot . " of 6 => *bang*";
-        $shot = 0;
-    } else {
-        $out = $nick . ": chamber " . $shot . " of 6 => *click*";
-        $query = "INSERT INTO roulette_shots (shot, hit) 
-              VALUES (?, ?)";
-        $sth = $dbh->prepare($query);
-        $sth->execute($shot, $hit);
-    }
-    
-    # Update roulette_stats
-    $query = "SELECT * FROM roulette_stats WHERE user = ?";
-    $sth = $dbh->prepare($query);
-    $sth->execute($nick);
-    if (@row = $sth->fetchrow()) {
-        # Update
-        if ($out =~ /\*bang\*/) {
-            # User is dead
-            $query = "UPDATE roulette_stats SET shots = ?, hits = ?, deathrate = ?, liverate = ? 
-                  WHERE user = ?";
-            $sth = $dbh->prepare($query);
-            $sth->execute($row[2] + 1, $row[3] + 1, sprintf("%.1f", (($row[3] + 1) / ($row[2] + 1)) * 100), sprintf("%.1f", (100 - ((($row[3] + 1) / ($row[2] + 1)) * 100))), $nick);
-        } else {
-            # User lives
-            $query = "UPDATE roulette_stats SET shots = ?, deathrate = ?, liverate = ?
-                  WHERE user = ?";
-            $sth = $dbh->prepare($query);
-            $sth->execute($row[2] + 1, sprintf("%.1f", (($row[3] / ($row[2] + 1)) * 100)), sprintf("%.1f", (100 - (($row[3] / ($row[2] + 1)) * 100))), $nick);
-        }
-    } else {
-        # Insert
-        if ($out =~ /\*bang\*/) {
-            # User is dead
-            $query = "INSERT INTO roulette_stats (user, shots, hits, deathrate, liverate)
-                  VALUES (?, ?, ?, ?, ?)";
-            $sth = $dbh->prepare($query);
-            $sth->execute($nick, 1, 1, 100, 0);
-        } else {
-            # User lives
-            $query = "INSERT INTO roulette_stats (user, shots, hits, deathrate, liverate)
-                  VALUES (?, ?, ?, ?, ?)";
-            $sth = $dbh->prepare($query);
-            $sth->execute($nick, 1, 0, 0, 100);
-        }
-    }
-
-    return $out;
-}
-
-# bot_roulette_stats
-# Print statistical information for roulette games
-sub bot_roulette_stats {
-    my $heap = shift;
-    return unless defined $heap;
-    # Most hits
-    my $dbh = new Anna::DB;
-    my $query = "SELECT * FROM roulette_stats ORDER BY hits DESC LIMIT 1";
-    my $sth = $dbh->prepare($query);
-    $sth->execute();
-    my @row;
-    my $most_hits;
-    if (@row = $sth->fetchrow()) {
-        $most_hits = $row[1] . " (".$row[3]." hits)";
-    } else {
-        return "You haven't played any roulette yet!";
-    }
-
-    # Most shots
-    $query = "SELECT * FROM roulette_stats ORDER BY shots DESC LIMIT 1";
-    $sth = $dbh->prepare($query);
-    $sth->execute();
-    @row = $sth->fetchrow();
-    my $most_shots = $row[1] . " (".$row[2]." shots)";
-
-    # Highest deathrate
-    $query = "SELECT * FROM roulette_stats ORDER BY deathrate DESC LIMIT 1";
-    $sth = $dbh->prepare($query);
-    $sth->execute();
-    @row = $sth->fetchrow();
-    my $highest_deathrate = $row[1] . " (".$row[4]."%)";
-
-    # Highest liverate
-    $query = "SELECT * FROM roulette_stats ORDER BY liverate DESC LIMIT 1";
-    $sth = $dbh->prepare($query);
-    $sth->execute();
-    @row = $sth->fetchrow();
-    my $highest_liverate = $row[1] . " (".$row[5]."%)";
-    
-    return "Roulette stats: Most shots - ".$most_shots.". Most hits - ".$most_hits.". Highest deathrate - ".$highest_deathrate.". Highest survival rate - ".$highest_liverate.".";
 }
 
 ## bot_search
