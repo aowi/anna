@@ -43,6 +43,9 @@ TODO for module-refactoring:
  * Nickserv info
  * Other stuff?
 
+* Database handling
+ * Move to something more abstract for Anna^'s internal database
+ * Generate the core database on the fly for new users
 
 Modules todo:
  * Nickserv - handle authentication towards nickserv
