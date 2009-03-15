@@ -27,6 +27,11 @@ sub reply_hilight {
     $poe_kernel->get_active_session->get_heap->{irc}->yield(privmsg => $self->{stash}->{target} => $self->{stash}->{nick} . ": ". shift);
 }
 
+sub action {
+    my $self = shift;
+    $poe_kernel->get_active_session->get_heap->{irc}->yield(ctcp => $self->{stash}->{target} => 'ACTION ' . shift);
+}
+
 sub stash {
     my $self = shift;
     $self->{stash} = shift;

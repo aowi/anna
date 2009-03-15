@@ -170,6 +170,11 @@ sub irc {
     return $self->{irc};
 }
 
+sub db {
+    my $self = shift;
+    return $self->{db};
+}
+
 sub protect {
     my $self = shift;
     print Dumper($self);
