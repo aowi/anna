@@ -3,6 +3,7 @@ use strict;
 use warnings;
 
 use Anna::Module;
+use Anna::ModuleHandler;
 use Data::Dumper;
 use Anna::Auth;
 use POE;
@@ -17,7 +18,7 @@ sub module_load {
         $m->irc->reply_hilight("You don't have permission to load modules!");
         return;
     }
-    if (!Anna::Module::load($_[ARG])) {
+    if (!Anna::ModuleHandler::load($_[ARG])) {
         $m->irc->reply_hilight("Failed to load " . $_[ARG]);
     }
 }
@@ -31,7 +32,7 @@ sub module_unload {
         $m->irc->reply_hilight(sprintf "Module %s is protected and cannot be unloaded", $_[ARG]);
         return;
     }
-    if (Anna::Module::unload($_[ARG])) {
+    if (Anna::ModuleHandler::unload($_[ARG])) {
         $m->irc->reply_hilight("Unloaded module " . $_[ARG]);
     } else {
         $m->irc->reply_hilight("Failed to unload " . $_[ARG]);
@@ -40,7 +41,7 @@ sub module_unload {
 
 sub module_list {
     my @mods;
-    while (my ($k, $v) = each %$Anna::Module::modules) {
+    while (my ($k, $v) = each %$Anna::ModuleHandler::modules) {
         push @mods, $k;
     }
     $m->irc->reply(sprintf "Loaded modules: %s", join(", ", @mods));
